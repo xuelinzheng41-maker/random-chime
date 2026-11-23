@@ -682,31 +682,160 @@ body.is-running .halo-wrapper {
 }
 
 /* ============================================================
-   沉浸全屏模式：放大时钟，无操作时轻柔隐去多余控件
+   沉浸全屏模式：满屏仅保留时钟，支持缩放，鼠标移动时底部浮现悬浮栏
    ============================================================ */
+:root {
+  --fs-scale: 1;
+}
+
+body.is-fullscreen .stage {
+  padding: 0;
+  justify-content: center;
+}
+
+body.is-fullscreen .titlebar,
+body.is-fullscreen .top-section,
+body.is-fullscreen .mode-dots,
+body.is-fullscreen .controls,
+body.is-fullscreen .stats-bar,
+body.is-fullscreen .clock-switch-hint {
+  display: none !important;
+}
+
+body.is-fullscreen .clock-trigger {
+  transform: scale(var(--fs-scale));
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+body.is-fullscreen .clock-trigger:active {
+  transform: scale(calc(var(--fs-scale) * 0.985));
+}
+
 body.is-fullscreen .minimal-digits {
-  font-size: clamp(110px, 22vw, 220px);
+  font-size: clamp(120px, 22vw, 240px);
 }
 
 body.is-fullscreen .flip-unit {
-  --card-w: clamp(100px, 16vw, 190px);
-  --card-h: clamp(146px, 23vw, 270px);
-  --card-font: clamp(82px, 14vw, 164px);
+  --card-w: clamp(108px, 16vw, 200px);
+  --card-h: clamp(156px, 23vw, 286px);
+  --card-font: clamp(88px, 14vw, 174px);
 }
 
 body.is-fullscreen .halo-wrapper {
-  width: clamp(280px, 42vw, 390px);
-  height: clamp(280px, 42vw, 390px);
+  width: clamp(300px, 42vw, 410px);
+  height: clamp(300px, 42vw, 410px);
 }
 
-body.is-fullscreen.ui-idle .titlebar,
-body.is-fullscreen.ui-idle .top-meta,
-body.is-fullscreen.ui-idle .mode-dots,
-body.is-fullscreen.ui-idle .controls,
-body.is-fullscreen.ui-idle .stats-bar,
-body.is-fullscreen.ui-idle .clock-switch-hint {
+/* 全屏底部悬浮控制胶囊 */
+.fs-dock {
+  position: fixed;
+  left: 50%;
+  bottom: 30px;
+  transform: translate(-50%, 18px);
+  z-index: 35;
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(16px);
   opacity: 0;
   pointer-events: none;
+  transition: opacity 0.28s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  -webkit-app-region: no-drag;
+}
+
+body.is-fullscreen .fs-dock {
+  display: flex;
+}
+
+body.is-fullscreen.fs-dock-visible .fs-dock {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  pointer-events: auto;
+}
+
+.fs-dock-btn {
+  height: 34px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.fs-dock-btn:hover {
+  background: var(--bg-subtle);
+  color: var(--text);
+}
+
+.fs-dock-btn.primary {
+  background: var(--text);
+  color: var(--bg);
+}
+
+.fs-dock-btn.primary.running {
+  background: var(--accent);
+  color: #fffdf9;
+}
+
+.fs-dock-btn.accent {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.fs-dock-btn.accent:hover {
+  background: var(--accent);
+  color: #fffdf9;
+}
+
+.fs-dock-sep {
+  width: 1px;
+  height: 16px;
+  background: var(--border-strong);
+  margin: 0 2px;
+}
+
+.fs-scale-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.fs-dock-icon {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fs-dock-icon:hover {
+  background: var(--bg-subtle);
+  color: var(--text);
+}
+
+.fs-scale-label {
+  min-width: 40px;
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ============================================================
@@ -866,6 +995,7 @@ body.is-fullscreen.ui-idle .clock-switch-hint {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.28s ease;
+  -webkit-app-region: no-drag;
 }
 
 .drawer-backdrop.open {
@@ -887,6 +1017,7 @@ body.is-fullscreen.ui-idle .clock-switch-hint {
   flex-direction: column;
   transform: translateX(102%);
   transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  -webkit-app-region: no-drag;
 }
 
 .settings-drawer.open {
@@ -900,6 +1031,9 @@ body.is-fullscreen.ui-idle .clock-switch-hint {
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--border);
+  -webkit-app-region: no-drag;
+  position: relative;
+  z-index: 55;
 }
 
 .drawer-header h3 {
@@ -1384,6 +1518,12 @@ body.is-fullscreen.ui-idle .top-section {
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
+  -webkit-app-region: no-drag;
+}
+
+body.drawer-open .titlebar {
+  pointer-events: none;
+  -webkit-app-region: no-drag;
 }
 
 .drawer-tab:hover {

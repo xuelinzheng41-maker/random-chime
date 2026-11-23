@@ -217,6 +217,22 @@
     </footer>
   </main>
 
+  <!-- 沉浸全屏专属底部悬浮控制条（仅在全屏鼠标移动时浮现） -->
+  <div class="fs-dock" id="fsDock" aria-label="全屏控制栏">
+    <button class="fs-dock-btn primary" id="fsBtnToggle">开始专注</button>
+    <button class="fs-dock-btn accent hidden" id="fsBtnFinish">提前结束</button>
+    <span class="fs-dock-sep"></span>
+    <div class="fs-scale-group" title="调节全屏时钟大小（也可滚轮缩放）">
+      <button class="fs-dock-icon" id="fsScaleDown" aria-label="缩小始终">−</button>
+      <span class="fs-scale-label" id="fsScaleLabel">100%</span>
+      <button class="fs-dock-icon" id="fsScaleUp" aria-label="放大时钟">+</button>
+    </div>
+    <span class="fs-dock-sep"></span>
+    <button class="fs-dock-btn" id="fsBtnMode">切换样式</button>
+    <button class="fs-dock-btn" id="fsBtnTheme">夜间/米白</button>
+    <button class="fs-dock-btn" id="fsBtnExit">退出全屏</button>
+  </div>
+
   <!-- 10 秒闭眼微休息柔和覆盖层 -->
   <div class="rest-overlay" id="restOverlay" aria-hidden="true">
     <div class="rest-inner">

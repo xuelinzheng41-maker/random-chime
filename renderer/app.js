@@ -32,6 +32,7 @@
     ambientVolume: 30,
     hideNextHint: true,
     currentGoal: "",
+    fullscreenScale: 1,
   };
 
   const defaultAiConfig = {
@@ -152,6 +153,17 @@
   const btnReset = $("btnReset");
   const btnFinishEarly = $("btnFinishEarly");
   const btnTestRest = $("btnTestRest");
+
+  // 沉浸全屏悬浮控制栏
+  const fsDock = $("fsDock");
+  const fsBtnToggle = $("fsBtnToggle");
+  const fsBtnFinish = $("fsBtnFinish");
+  const fsScaleDown = $("fsScaleDown");
+  const fsScaleLabel = $("fsScaleLabel");
+  const fsScaleUp = $("fsScaleUp");
+  const fsBtnMode = $("fsBtnMode");
+  const fsBtnTheme = $("fsBtnTheme");
+  const fsBtnExit = $("fsBtnExit");
 
   // 底部统计
   const statsBar = $("statsBar");
@@ -418,25 +430,31 @@
 
     // 只要已经开始专注，就显示「提前结束」按钮
     btnFinishEarly.classList.toggle("hidden", !inSession);
+    fsBtnFinish.classList.toggle("hidden", !inSession);
+    fsBtnToggle.classList.toggle("running", running);
 
     statusPill.classList.remove("focusing", "resting");
     if (state.phase === "focus") {
       statusPill.textContent = "深度专注中";
       statusPill.classList.add("focusing");
       btnToggleLabel.textContent = "暂停专注";
+      fsBtnToggle.textContent = "暂停专注";
       haloSub.textContent = "保持专注 · 静候提示音";
     } else if (state.phase === "rest") {
       statusPill.textContent = "闭眼微休息";
       statusPill.classList.add("resting");
       btnToggleLabel.textContent = "微休息中";
+      fsBtnToggle.textContent = "微休息中";
       haloSub.textContent = "大脑神经重放中";
     } else if (state.phase === "paused") {
       statusPill.textContent = "已暂停";
       btnToggleLabel.textContent = "继续专注";
+      fsBtnToggle.textContent = "继续专注";
       haloSub.textContent = "点击继续专注";
     } else {
       statusPill.textContent = "准备专注";
       btnToggleLabel.textContent = "开始专注";
+      fsBtnToggle.textContent = "开始专注";
       haloSub.textContent = "深度专注周期";
     }
 
@@ -1176,13 +1194,16 @@
 
   function openDrawer(tabName = "settings") {
     switchDrawerTab(tabName);
+    bodyEl.classList.add("drawer-open");
     settingsDrawer.classList.add("open");
     drawerBackdrop.classList.add("open");
   }
 
   function closeDrawer() {
+    bodyEl.classList.remove("drawer-open");
     settingsDrawer.classList.remove("open");
     drawerBackdrop.classList.remove("open");
+    closeModelDropdown();
   }
 
   drawerTabs.forEach((tab) => {
@@ -1264,25 +1285,99 @@
     window.desktopAPI.onFullscreenChanged((isFs) => {
       bodyEl.classList.toggle("is-fullscreen", isFs);
       btnFullscreen.classList.toggle("active", isFs);
-      if (!isFs) bodyEl.classList.remove("ui-idle");
+      if (isFs) {
+        closeDrawer();
+        bodyEl.classList.remove("fs-dock-visible");
+      } else {
+        bodyEl.classList.remove("fs-dock-visible");
+      }
     });
 
     window.desktopAPI.onTrayToggleTimer(() => toggleFocus());
   }
 
-  let idleTimer = null;
-  function bumpFullscreenActivity() {
-    if (!bodyEl.classList.contains("is-fullscreen")) return;
-    bodyEl.classList.remove("ui-idle");
-    if (idleTimer) clearTimeout(idleTimer);
-    idleTimer = setTimeout(() => {
-      if (bodyEl.classList.contains("is-fullscreen") && !settingsDrawer.classList.contains("open")) {
-        bodyEl.classList.add("ui-idle");
-      }
-    }, 3000);
+  // 全屏时钟大小缩放与底部悬浮控制栏自动显隐
+  function applyFullscreenScale(nextScale) {
+    const clamped = Math.round(Math.max(0.6, Math.min(1.7, nextScale)) * 100) / 100;
+    settings.fullscreenScale = clamped;
+    htmlEl.style.setProperty("--fs-scale", String(clamped));
+    fsScaleLabel.textContent = Math.round(clamped * 100) + "%";
+    saveSettings();
   }
-  window.addEventListener("mousemove", bumpFullscreenActivity);
-  window.addEventListener("mousedown", bumpFullscreenActivity);
+
+  let fsDockTimer = null;
+  let fsDockHovered = false;
+
+  function scheduleHideFsDock() {
+    if (fsDockTimer) clearTimeout(fsDockTimer);
+    fsDockTimer = setTimeout(() => {
+      if (bodyEl.classList.contains("is-fullscreen") && !fsDockHovered) {
+        bodyEl.classList.remove("fs-dock-visible");
+      }
+    }, 2400);
+  }
+
+  function showFsDock() {
+    if (!bodyEl.classList.contains("is-fullscreen")) return;
+    bodyEl.classList.add("fs-dock-visible");
+    scheduleHideFsDock();
+  }
+
+  window.addEventListener("mousemove", showFsDock);
+  window.addEventListener("mousedown", showFsDock);
+  window.addEventListener(
+    "wheel",
+    (e) => {
+      if (!bodyEl.classList.contains("is-fullscreen")) return;
+      if (settingsDrawer.classList.contains("open")) return;
+      const delta = e.deltaY < 0 ? 0.05 : -0.05;
+      applyFullscreenScale((settings.fullscreenScale || 1) + delta);
+      showFsDock();
+    },
+    { passive: true }
+  );
+
+  fsDock.addEventListener("mouseenter", () => {
+    fsDockHovered = true;
+    if (fsDockTimer) clearTimeout(fsDockTimer);
+  });
+  fsDock.addEventListener("mouseleave", () => {
+    fsDockHovered = false;
+    scheduleHideFsDock();
+  });
+
+  fsBtnToggle.addEventListener("click", () => {
+    toggleFocus();
+    showFsDock();
+  });
+  fsBtnFinish.addEventListener("click", () => {
+    if (state.phase === "focus" || state.phase === "paused") {
+      openFinishDialog(true);
+    }
+  });
+  fsScaleDown.addEventListener("click", () => {
+    applyFullscreenScale((settings.fullscreenScale || 1) - 0.1);
+    showFsDock();
+  });
+  fsScaleUp.addEventListener("click", () => {
+    applyFullscreenScale((settings.fullscreenScale || 1) + 0.1);
+    showFsDock();
+  });
+  fsScaleLabel.addEventListener("click", () => {
+    applyFullscreenScale(1);
+    showFsDock();
+  });
+  fsBtnMode.addEventListener("click", () => {
+    cycleClockMode();
+    showFsDock();
+  });
+  fsBtnTheme.addEventListener("click", () => {
+    applyTheme(settings.theme === "cream" ? "dark" : "cream");
+    showFsDock();
+  });
+  fsBtnExit.addEventListener("click", () => {
+    if (window.desktopAPI) window.desktopAPI.toggleFullscreen();
+  });
 
   function updateFocusMinutes(min) {
     settings.focusMinutes = min;
@@ -1382,6 +1477,7 @@
   // 初始化
   applyTheme(settings.theme);
   applyClockMode(settings.clockMode, false);
+  applyFullscreenScale(settings.fullscreenScale || 1);
   renderGoalBar(false);
   syncSettingsUI();
   syncAiUI();
