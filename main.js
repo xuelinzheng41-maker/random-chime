@@ -156,6 +156,83 @@ ipcMain.handle("tray:update-tooltip", (_event, text) => {
   }
 });
 
+function resolveChatEndpoint(baseUrl) {
+  const cleaned = String(baseUrl || "").trim().replace(/\/+$/, "");
+  if (!cleaned) return "";
+  if (cleaned.endsWith("/chat/completions")) return cleaned;
+  if (cleaned.endsWith("/v1")) return cleaned + "/chat/completions";
+  return cleaned + "/v1/chat/completions";
+}
+
+ipcMain.handle("ai:chat", async (_event, payload) => {
+  try {
+    const { baseUrl, apiKey, model, messages } = payload || {};
+    const endpoint = resolveChatEndpoint(baseUrl);
+    if (!endpoint) {
+      return { ok: false, error: "请先填写有效的 API Base URL。" };
+    }
+    if (!model || !String(model).trim()) {
+      return { ok: false, error: "请先填写模型名称（例如 deepseek-chat）。" };
+    }
+
+    const headers = {
+      "Content-Type": "application/json",
+    };
+    if (apiKey && String(apiKey).trim()) {
+      headers.Authorization = "Bearer " + String(apiKey).trim();
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 60000);
+    let res;
+    try {
+      res = await fetch(endpoint, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          model: String(model).trim(),
+          messages,
+          temperature: 0.6,
+        }),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
+
+    const rawText = await res.text();
+    let data = null;
+    try {
+      data = JSON.parse(rawText);
+    } catch {}
+
+    if (!res.ok) {
+      const msg =
+        (data && data.error && (data.error.message || data.error.type)) ||
+        rawText.slice(0, 240) ||
+        "HTTP " + res.status;
+      return { ok: false, error: "接口返回错误 (" + res.status + "): " + msg };
+    }
+
+    const content =
+      data &&
+      data.choices &&
+      data.choices[0] &&
+      data.choices[0].message &&
+      data.choices[0].message.content;
+
+    if (!content) {
+      return { ok: false, error: "模型未返回有效文本内容，请检查模型名称与接口格式。" };
+    }
+    return { ok: true, content: String(content) };
+  } catch (err) {
+    if (err && err.name === "AbortError") {
+      return { ok: false, error: "请求超时（60秒），请检查网络或代理设置。" };
+    }
+    return { ok: false, error: "请求失败: " + (err && err.message ? err.message : String(err)) };
+  }
+});
+
 app.whenReady().then(() => {
   createWindow();
   createTray();

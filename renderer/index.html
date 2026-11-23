@@ -10,8 +10,19 @@
   <!-- 自定义无边框标题栏 -->
   <header class="titlebar" id="titlebar">
     <div class="titlebar-left">
-      <span class="brand-dot" id="brandDot"></span>
-      <span class="brand-name">随机提示音</span>
+      <button class="brand-trigger" id="btnBrandSettings" title="打开设置、专注记录与 AI 分析" aria-label="打开设置与AI分析">
+        <span class="brand-dot" id="brandDot"></span>
+        <span class="brand-name">随机提示音</span>
+        <svg class="brand-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+      <button class="ai-quick-pill" id="btnQuickAI" title="打开 AI 专注进展分析">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"></path>
+        </svg>
+        <span>AI 分析</span>
+      </button>
       <span class="status-pill" id="statusPill">准备专注</span>
     </div>
     <div class="titlebar-actions">
@@ -35,7 +46,7 @@
           <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
         </svg>
       </button>
-      <button class="icon-btn" id="btnSettings" title="专注与音效设置" aria-label="设置">
+      <button class="icon-btn" id="btnSettings" title="设置、记录与 AI 分析" aria-label="设置">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="3"></circle>
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -63,10 +74,38 @@
 
   <!-- 主舞台 -->
   <main class="stage" id="stage">
-    <!-- 顶部微提示 -->
-    <div class="top-meta">
-      <span class="meta-chip" id="intervalBadge">随机微休息 · 3–5 分钟 / 闭眼 10 秒</span>
-      <span class="meta-chip subtle hidden" id="nextChimeHint">下次提示约 --:--</span>
+    <!-- 顶部专注目标 & 随机区间微提示 -->
+    <div class="top-section">
+      <!-- 本次专注目标（带 + 号添加入口） -->
+      <div class="goal-bar" id="goalBar">
+        <button class="goal-add-btn" id="btnAddGoal" title="点击填写本次专注目标">
+          <span class="goal-plus">+</span>
+          <span>添加本次专注目标</span>
+        </button>
+
+        <div class="goal-editor hidden" id="goalEditor">
+          <input
+            type="text"
+            id="inputGoal"
+            class="goal-input"
+            maxlength="60"
+            placeholder="输入这次想专注完成的目标，回车确认..."
+          />
+          <button class="goal-save-btn" id="btnSaveGoal">确定</button>
+          <button class="goal-cancel-btn" id="btnCancelGoal" title="取消">×</button>
+        </div>
+
+        <div class="goal-active hidden" id="goalActive">
+          <span class="goal-tag-dot"></span>
+          <span class="goal-text" id="goalText" title="点击修改目标"></span>
+          <button class="goal-clear-btn" id="btnClearGoal" title="清除目标">×</button>
+        </div>
+      </div>
+
+      <div class="top-meta">
+        <span class="meta-chip" id="intervalBadge">随机微休息 · 3–5 分钟 / 闭眼 10 秒</span>
+        <span class="meta-chip subtle hidden" id="nextChimeHint">下次提示约 --:--</span>
+      </div>
     </div>
 
     <!-- 可点击切换效果的时钟容器 -->
@@ -151,15 +190,16 @@
 
     <!-- 控制操作区 -->
     <section class="controls">
-      <button class="btn-secondary" id="btnReset" title="重置计时 (R)">重置</button>
+      <button class="btn-secondary" id="btnReset" title="放弃并重置当前计时 (R)">重置</button>
       <button class="btn-primary" id="btnToggle" title="开始 / 暂停 (Space)">
         <span id="btnToggleLabel">开始专注</span>
       </button>
+      <button class="btn-finish hidden" id="btnFinishEarly" title="提前结束并记录本次专注时长">提前结束</button>
       <button class="btn-secondary" id="btnTestRest" title="立即体验一次 10 秒闭眼微休息">试听微休息</button>
     </section>
 
-    <!-- 底部轻统计 -->
-    <footer class="stats-bar">
+    <!-- 底部轻统计（点击可打开专注记录） -->
+    <footer class="stats-bar" id="statsBar" title="点击查看全部专注记录">
       <div class="stat-item">
         <span class="stat-label">本次微休息</span>
         <span class="stat-value" id="statSessionRests">0 次</span>
@@ -193,24 +233,39 @@
     </div>
   </div>
 
-  <!-- 专注完成提示弹窗 -->
+  <!-- 专注结算 & 记录保存弹窗（自然完成或提前结束） -->
   <div class="complete-overlay" id="completeOverlay" aria-hidden="true">
     <div class="complete-card">
-      <div class="complete-badge">周期完成</div>
-      <h2 class="complete-title">完成了一次深度专注</h2>
+      <div class="complete-badge" id="completeBadge">周期完成</div>
+      <h2 class="complete-title" id="completeTitle">完成了一次深度专注</h2>
+      <div class="complete-goal-line hidden" id="completeGoalLine"></div>
       <p class="complete-summary" id="completeSummary">
-        本次专注 90 分钟，穿插完成了 0 次大脑重放微休息。建议起身远眺或活动 10–20 分钟。
+        本次实际专注 90 分钟，穿插完成了 0 次大脑重放微休息。
       </p>
-      <button class="btn-primary" id="btnCompleteDone">好的，休息一下</button>
+      <textarea
+        id="inputSessionNote"
+        class="session-note-input"
+        rows="2"
+        maxlength="200"
+        placeholder="顺手记一句本次进展或感受（可选，方便 AI 帮你复盘）..."
+      ></textarea>
+      <div class="complete-actions">
+        <button class="btn-secondary" id="btnCompleteAI">保存并 AI 分析</button>
+        <button class="btn-primary" id="btnCompleteDone">保存本次记录</button>
+      </div>
     </div>
   </div>
 
-  <!-- 侧滑设置抽屉 -->
+  <!-- 侧滑多功能抽屉（设置 / 专注记录 / AI 进展分析） -->
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
-  <aside class="settings-drawer" id="settingsDrawer" aria-label="设置面板">
+  <aside class="settings-drawer" id="settingsDrawer" aria-label="设置与AI分析面板">
     <div class="drawer-header">
-      <h3>专注与音效设置</h3>
-      <button class="icon-btn" id="btnCloseSettings" aria-label="关闭设置">
+      <div class="drawer-tabs" role="tablist">
+        <button class="drawer-tab active" data-tab="settings" role="tab">专注设置</button>
+        <button class="drawer-tab" data-tab="history" role="tab">专注记录</button>
+        <button class="drawer-tab" data-tab="ai" role="tab">AI 分析</button>
+      </div>
+      <button class="icon-btn" id="btnCloseSettings" aria-label="关闭面板">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
           <line x1="6" y1="6" x2="18" y2="18"></line>
           <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -218,7 +273,8 @@
       </button>
     </div>
 
-    <div class="drawer-body">
+    <!-- Tab 1: 专注设置 -->
+    <div class="drawer-body tab-panel active" id="panelSettings">
       <div class="setting-group">
         <div class="setting-row">
           <label for="inputFocusMinutes">总专注时长</label>
@@ -297,6 +353,92 @@
           <input type="checkbox" id="toggleHideNext" checked />
           <span class="slider"></span>
         </label>
+      </div>
+    </div>
+
+    <!-- Tab 2: 专注记录 -->
+    <div class="drawer-body tab-panel" id="panelHistory">
+      <div class="history-summary-grid">
+        <div class="summary-box">
+          <div class="summary-num" id="histTotalSessions">0</div>
+          <div class="summary-lbl">累计专注</div>
+        </div>
+        <div class="summary-box">
+          <div class="summary-num" id="histTotalMinutes">0m</div>
+          <div class="summary-lbl">累计时长</div>
+        </div>
+        <div class="summary-box">
+          <div class="summary-num" id="histTotalRests">0</div>
+          <div class="summary-lbl">微休息重放</div>
+        </div>
+      </div>
+
+      <div class="history-toolbar">
+        <span class="section-caption">最近专注历史</span>
+        <button class="text-btn danger" id="btnClearHistory">清空记录</button>
+      </div>
+
+      <div class="history-list" id="historyList">
+        <div class="empty-state">还没有专注记录，完成或提前结束一次专注后会自动保存在这里。</div>
+      </div>
+    </div>
+
+    <!-- Tab 3: AI 进展分析 -->
+    <div class="drawer-body tab-panel" id="panelAI">
+      <div class="ai-config-card">
+        <div class="setting-row">
+          <span class="section-caption">模型接口配置（仅存本地）</span>
+          <button class="text-btn" id="btnTestAI">测试连接</button>
+        </div>
+
+        <div class="preset-pills four-cols" id="aiProviderPresets">
+          <button class="pill" data-provider="deepseek">DeepSeek</button>
+          <button class="pill" data-provider="openai">OpenAI</button>
+          <button class="pill" data-provider="kimi">Kimi</button>
+          <button class="pill" data-provider="ollama">Ollama</button>
+        </div>
+
+        <label class="field-label">
+          <span>API Base URL</span>
+          <input type="text" id="inputAiBaseUrl" class="field-input" placeholder="https://api.deepseek.com/v1" />
+        </label>
+
+        <label class="field-label">
+          <span>模型名称 (Model)</span>
+          <input type="text" id="inputAiModel" class="field-input" placeholder="deepseek-chat" />
+        </label>
+
+        <label class="field-label">
+          <span>API Key（本地 Ollama 可留空）</span>
+          <div class="password-wrap">
+            <input type="password" id="inputAiKey" class="field-input" placeholder="sk-..." />
+            <button class="text-btn" id="btnToggleKeyVis" type="button">显示</button>
+          </div>
+        </label>
+
+        <div class="ai-status-msg" id="aiStatusMsg"></div>
+      </div>
+
+      <div class="ai-run-section">
+        <div class="setting-row">
+          <span class="section-caption">分析时间范围</span>
+          <div class="scope-pills" id="aiScopePills">
+            <button class="scope-pill active" data-scope="today">今日</button>
+            <button class="scope-pill" data-scope="7d">近 7 天</button>
+            <button class="scope-pill" data-scope="all">全部</button>
+          </div>
+        </div>
+        <button class="btn-primary full-width" id="btnRunAI">分析我的专注进展</button>
+      </div>
+
+      <div class="ai-result-card" id="aiResultCard">
+        <div class="ai-result-header">
+          <span class="section-caption" id="aiResultMeta">AI 复盘建议</span>
+          <button class="text-btn hidden" id="btnCopyAI">复制</button>
+        </div>
+        <div class="ai-result-body" id="aiResultBody">
+          <div class="empty-state">配置好 API Key 后，点击上方按钮即可让 AI 结合你的专注目标、实际时长、提前结束情况与备注，生成专属进展复盘与下一步建议。</div>
+        </div>
       </div>
     </div>
   </aside>

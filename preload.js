@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld("desktopAPI", {
   setThemeBg: (isDark) => ipcRenderer.invoke("window:set-theme-bg", isDark),
   setPreventSleep: (enabled) => ipcRenderer.invoke("power:set-prevent-sleep", enabled),
   updateTrayTooltip: (text) => ipcRenderer.invoke("tray:update-tooltip", text),
+  aiChat: (payload) => ipcRenderer.invoke("ai:chat", payload),
   onFullscreenChanged: (cb) => {
     ipcRenderer.on("window:fullscreen-changed", (_e, val) => cb(val));
   },

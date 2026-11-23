@@ -1096,3 +1096,574 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .switch input:checked + .slider::before {
   transform: translateX(18px);
 }
+
+/* ============================================================
+   v1.1.0 新增样式：左上角设置/AI入口、+ 目标栏、提前结束、3-Tab 抽屉
+   ============================================================ */
+.brand-trigger {
+  -webkit-app-region: no-drag;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 9px 4px 8px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.brand-trigger:hover {
+  background: var(--bg-subtle);
+}
+
+.brand-chevron {
+  width: 12px;
+  height: 12px;
+  color: var(--text-muted);
+}
+
+.ai-quick-pill {
+  -webkit-app-region: no-drag;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ai-quick-pill svg {
+  width: 12px;
+  height: 12px;
+}
+
+.ai-quick-pill:hover {
+  border-color: var(--accent);
+  transform: translateY(-0.5px);
+}
+
+/* 顶部区域：目标栏 + 微休息信息 */
+.top-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  transition: opacity 0.35s ease;
+}
+
+.goal-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+}
+
+.goal-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 14px 0 10px;
+  border-radius: 999px;
+  border: 1px dashed var(--border-strong);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.goal-add-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.goal-plus {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--bg-subtle);
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.goal-editor {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px 3px 12px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  box-shadow: 0 4px 16px rgba(196, 123, 90, 0.12);
+}
+
+.goal-input {
+  width: min(280px, 56vw);
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 12.5px;
+  outline: none;
+  user-select: text;
+}
+
+.goal-save-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 4px 11px;
+  background: var(--accent);
+  color: #fffdf9;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+
+.goal-cancel-btn,
+.goal-clear-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 15px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.goal-cancel-btn:hover,
+.goal-clear-btn:hover {
+  background: var(--bg-subtle);
+  color: var(--text);
+}
+
+.goal-active {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: min(440px, 84vw);
+  padding: 5px 8px 5px 13px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+.goal-tag-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+.goal-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.goal-text:hover {
+  color: var(--accent);
+}
+
+/* 提前结束按钮 */
+.btn-finish {
+  height: 42px;
+  padding: 0 18px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-finish:hover {
+  background: var(--accent);
+  color: #fffdf9;
+}
+
+.stats-bar {
+  cursor: pointer;
+  padding: 4px 12px;
+  border-radius: 999px;
+  transition: background-color 0.2s ease, opacity 0.35s ease;
+}
+
+.stats-bar:hover {
+  background: var(--bg-subtle);
+}
+
+body.is-fullscreen.ui-idle .top-section {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* 结算弹窗增强 */
+.complete-goal-line {
+  font-size: 12.5px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 5px 12px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  display: inline-block;
+  max-width: 100%;
+  word-break: break-word;
+}
+
+.session-note-input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12.5px;
+  resize: none;
+  outline: none;
+  margin-bottom: 18px;
+  user-select: text;
+}
+
+.session-note-input:focus {
+  border-color: var(--accent);
+}
+
+.complete-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* 多功能 3-Tab 抽屉 */
+.settings-drawer {
+  width: min(410px, 92vw);
+}
+
+.drawer-tabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--bg-subtle);
+}
+
+.drawer-tab {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.drawer-tab:hover {
+  color: var(--text);
+}
+
+.drawer-tab.active {
+  background: var(--surface-elevated);
+  color: var(--text);
+  font-weight: 500;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.tab-panel {
+  display: none;
+}
+
+.tab-panel.active {
+  display: flex;
+}
+
+/* 专注记录列表 */
+.history-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.summary-box {
+  padding: 12px 8px;
+  border-radius: 12px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  text-align: center;
+}
+
+.summary-num {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.summary-lbl {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 3px;
+}
+
+.history-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.section-caption {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
+}
+
+.text-btn.danger {
+  color: #c4564b;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.history-item {
+  padding: 12px 13px;
+  border-radius: 13px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.history-item-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.history-goal {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.history-del {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 4px;
+}
+
+.history-del:hover {
+  color: #c4564b;
+}
+
+.history-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+
+.history-badge {
+  font-size: 10.5px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(99, 133, 112, 0.14);
+  color: var(--rest-accent);
+}
+
+.history-badge.early {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.history-note {
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: var(--bg-subtle);
+  padding: 6px 9px;
+  border-radius: 8px;
+  line-height: 1.5;
+}
+
+.empty-state {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 22px 12px;
+  line-height: 1.65;
+}
+
+/* AI 进展分析面板 */
+.ai-config-card,
+.ai-result-card {
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.preset-pills.four-cols {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.field-label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+
+.field-input {
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 9px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12.5px;
+  outline: none;
+  user-select: text;
+}
+
+.field-input:focus {
+  border-color: var(--accent);
+}
+
+.password-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ai-status-msg {
+  font-size: 11.5px;
+  min-height: 16px;
+  color: var(--text-secondary);
+}
+
+.ai-status-msg.ok {
+  color: var(--rest-accent);
+}
+
+.ai-status-msg.err {
+  color: #c4564b;
+}
+
+.ai-run-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.scope-pills {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.scope-pill {
+  border: 1px solid var(--border);
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.scope-pill.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+  font-weight: 500;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.ai-result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ai-result-body {
+  font-size: 12.5px;
+  line-height: 1.72;
+  color: var(--text);
+  user-select: text;
+  word-break: break-word;
+}
+
+.ai-result-body h4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  margin: 10px 0 4px;
+}
+
+.ai-result-body h4:first-child {
+  margin-top: 0;
+}
+
+.ai-result-body p {
+  margin-bottom: 6px;
+}
+
+.ai-result-body ul {
+  padding-left: 18px;
+  margin-bottom: 8px;
+}
+
+.ai-result-body li {
+  margin-bottom: 4px;
+}

@@ -1,18 +1,27 @@
 // ============================================================
-// 随机提示音 · 主状态机、3D 翻页时钟控制器与随机微休息调度
+// 随机提示音 v1.1.0 · 主状态机、3D 翻页时钟、专注目标、历史记录与 AI 分析
 // ============================================================
 
 (function () {
   const STORAGE_KEY_SETTINGS = "random_chime_settings_v1";
-  const STORAGE_KEY_STATS = "random_chime_stats_v1";
+  const STORAGE_KEY_HISTORY = "random_chime_history_v1";
+  const STORAGE_KEY_AI_CONFIG = "random_chime_ai_config_v1";
+  const STORAGE_KEY_AI_LAST = "random_chime_ai_last_v1";
 
   const CLOCK_MODES = ["minimal", "flip", "halo"];
-  const HALO_CIRCUMFERENCE = 2 * Math.PI * 112; // 703.72
-  const REST_CIRCUMFERENCE = 2 * Math.PI * 96; // 603.19
+  const HALO_CIRCUMFERENCE = 2 * Math.PI * 112;
+  const REST_CIRCUMFERENCE = 2 * Math.PI * 96;
+
+  const AI_PRESETS = {
+    deepseek: { baseUrl: "https://api.deepseek.com/v1", model: "deepseek-chat" },
+    openai: { baseUrl: "https://api.openai.com/v1", model: "gpt-4o-mini" },
+    kimi: { baseUrl: "https://api.moonshot.cn/v1", model: "moonshot-v1-8k" },
+    ollama: { baseUrl: "http://127.0.0.1:11434/v1", model: "qwen2.5:7b" },
+  };
 
   const defaultSettings = {
-    theme: "cream", // "cream" | "dark"
-    clockMode: "minimal", // "minimal" | "flip" | "halo"
+    theme: "cream",
+    clockMode: "minimal",
     focusMinutes: 90,
     minGapMinutes: 3,
     maxGapMinutes: 5,
@@ -22,63 +31,90 @@
     ambientMode: "none",
     ambientVolume: 30,
     hideNextHint: true,
+    currentGoal: "",
   };
 
-  function loadSettings() {
+  const defaultAiConfig = {
+    provider: "deepseek",
+    baseUrl: "https://api.deepseek.com/v1",
+    model: "deepseek-chat",
+    apiKey: "",
+    scope: "today",
+  };
+
+  function safeParse(key, fallback) {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY_SETTINGS);
-      if (!raw) return { ...defaultSettings };
-      return { ...defaultSettings, ...JSON.parse(raw) };
+      const raw = localStorage.getItem(key);
+      if (!raw) return fallback;
+      return JSON.parse(raw);
     } catch {
-      return { ...defaultSettings };
+      return fallback;
     }
   }
 
+  function safeSave(key, val) {
+    try {
+      localStorage.setItem(key, JSON.stringify(val));
+    } catch {}
+  }
+
+  function todayKey(d = new Date()) {
+    return (
+      d.getFullYear() +
+      "-" +
+      String(d.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(d.getDate()).padStart(2, "0")
+    );
+  }
+
+  function formatDateTime(ts) {
+    const d = new Date(ts);
+    const md = String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    const hm = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+    return md + " " + hm;
+  }
+
+  function formatDurationCN(totalSeconds) {
+    const s = Math.max(0, Math.round(totalSeconds));
+    const mins = Math.floor(s / 60);
+    const secs = s % 60;
+    if (mins === 0) return secs + " 秒";
+    if (secs === 0) return mins + " 分钟";
+    return mins + " 分 " + secs + " 秒";
+  }
+
+  const settings = { ...defaultSettings, ...safeParse(STORAGE_KEY_SETTINGS, {}) };
+  let history = safeParse(STORAGE_KEY_HISTORY, []);
+  if (!Array.isArray(history)) history = [];
+  const aiConfig = { ...defaultAiConfig, ...safeParse(STORAGE_KEY_AI_CONFIG, {}) };
+  let lastAiReport = safeParse(STORAGE_KEY_AI_LAST, null);
+
   function saveSettings() {
-    try {
-      localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
-    } catch {}
+    safeSave(STORAGE_KEY_SETTINGS, settings);
   }
-
-  function todayKey() {
-    const d = new Date();
-    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  function saveHistory() {
+    safeSave(STORAGE_KEY_HISTORY, history);
   }
-
-  function loadStats() {
-    const key = todayKey();
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY_STATS);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed.date === key) return parsed;
-      }
-    } catch {}
-    return { date: key, minutes: 0, rests: 0 };
+  function saveAiConfig() {
+    safeSave(STORAGE_KEY_AI_CONFIG, aiConfig);
   }
-
-  function saveStats() {
-    try {
-      localStorage.setItem(STORAGE_KEY_STATS, JSON.stringify(stats));
-    } catch {}
-  }
-
-  const settings = loadSettings();
-  let stats = loadStats();
 
   // 运行时状态
   const state = {
     phase: "idle", // "idle" | "focus" | "paused" | "rest"
     totalMs: settings.focusMinutes * 60 * 1000,
     remainingMs: settings.focusMinutes * 60 * 1000,
+    sessionElapsedMs: 0,
+    sessionStartedAt: 0,
     lastTickAt: 0,
     nextRestInMs: 0,
     restRemainingMs: settings.restSeconds * 1000,
     restWasManualTest: false,
     prevPhaseBeforeTest: "idle",
     sessionRests: 0,
-    focusedAccumMs: 0,
     tickHandle: null,
+    pendingRecord: null,
   };
 
   // DOM 引用
@@ -91,6 +127,17 @@
   const intervalBadge = $("intervalBadge");
   const nextChimeHint = $("nextChimeHint");
 
+  // 目标栏
+  const btnAddGoal = $("btnAddGoal");
+  const goalEditor = $("goalEditor");
+  const inputGoal = $("inputGoal");
+  const btnSaveGoal = $("btnSaveGoal");
+  const btnCancelGoal = $("btnCancelGoal");
+  const goalActive = $("goalActive");
+  const goalText = $("goalText");
+  const btnClearGoal = $("btnClearGoal");
+
+  // 时钟
   const clockTrigger = $("clockTrigger");
   const minimalDigits = $("minimalDigits");
   const minimalProgress = $("minimalProgress");
@@ -99,25 +146,38 @@
   const haloSub = $("haloSub");
   const modeDotButtons = Array.from(document.querySelectorAll(".mode-dot"));
 
+  // 控制按钮
   const btnToggle = $("btnToggle");
   const btnToggleLabel = $("btnToggleLabel");
   const btnReset = $("btnReset");
+  const btnFinishEarly = $("btnFinishEarly");
   const btnTestRest = $("btnTestRest");
 
+  // 底部统计
+  const statsBar = $("statsBar");
   const statSessionRests = $("statSessionRests");
   const statTodayMinutes = $("statTodayMinutes");
   const statTodayRests = $("statTodayRests");
 
+  // 微休息遮罩
   const restOverlay = $("restOverlay");
   const restCountdown = $("restCountdown");
   const restRingFg = $("restRingFg");
   const btnSkipRest = $("btnSkipRest");
 
+  // 结算弹窗
   const completeOverlay = $("completeOverlay");
+  const completeBadge = $("completeBadge");
+  const completeTitle = $("completeTitle");
+  const completeGoalLine = $("completeGoalLine");
   const completeSummary = $("completeSummary");
+  const inputSessionNote = $("inputSessionNote");
   const btnCompleteDone = $("btnCompleteDone");
+  const btnCompleteAI = $("btnCompleteAI");
 
-  // 标题栏与设置抽屉
+  // 标题栏与抽屉
+  const btnBrandSettings = $("btnBrandSettings");
+  const btnQuickAI = $("btnQuickAI");
   const btnTheme = $("btnTheme");
   const btnPin = $("btnPin");
   const btnFullscreen = $("btnFullscreen");
@@ -128,8 +188,14 @@
   const drawerBackdrop = $("drawerBackdrop");
   const settingsDrawer = $("settingsDrawer");
   const btnCloseSettings = $("btnCloseSettings");
+  const drawerTabs = Array.from(document.querySelectorAll(".drawer-tab"));
+  const tabPanels = {
+    settings: $("panelSettings"),
+    history: $("panelHistory"),
+    ai: $("panelAI"),
+  };
 
-  // 设置控件
+  // 设置项
   const inputFocusMinutes = $("inputFocusMinutes");
   const valFocusMinutes = $("valFocusMinutes");
   const focusPresetBtns = Array.from(document.querySelectorAll("#focusPresets .pill"));
@@ -146,6 +212,27 @@
   const inputAmbientVolume = $("inputAmbientVolume");
   const valAmbientVolume = $("valAmbientVolume");
   const toggleHideNext = $("toggleHideNext");
+
+  // 历史记录 DOM
+  const histTotalSessions = $("histTotalSessions");
+  const histTotalMinutes = $("histTotalMinutes");
+  const histTotalRests = $("histTotalRests");
+  const historyList = $("historyList");
+  const btnClearHistory = $("btnClearHistory");
+
+  // AI DOM
+  const aiProviderBtns = Array.from(document.querySelectorAll("#aiProviderPresets .pill"));
+  const inputAiBaseUrl = $("inputAiBaseUrl");
+  const inputAiModel = $("inputAiModel");
+  const inputAiKey = $("inputAiKey");
+  const btnToggleKeyVis = $("btnToggleKeyVis");
+  const btnTestAI = $("btnTestAI");
+  const aiStatusMsg = $("aiStatusMsg");
+  const aiScopeBtns = Array.from(document.querySelectorAll("#aiScopePills .scope-pill"));
+  const btnRunAI = $("btnRunAI");
+  const aiResultMeta = $("aiResultMeta");
+  const aiResultBody = $("aiResultBody");
+  const btnCopyAI = $("btnCopyAI");
 
   // ============================================================
   // 3D 机械翻页时钟控制器
@@ -166,9 +253,7 @@
 
   function setFlipDigit(key, nextChar, animate = true) {
     const unit = flipUnits[key];
-    if (!unit) return;
-    if (unit.value === nextChar) return;
-
+    if (!unit || unit.value === nextChar) return;
     const prevChar = unit.value;
     unit.value = nextChar;
 
@@ -183,7 +268,6 @@
 
     if (unit.timer) clearTimeout(unit.timer);
     unit.el.classList.remove("flipping");
-    // 强制重排以重启 CSS 动画
     void unit.el.offsetWidth;
 
     unit.top.textContent = nextChar;
@@ -201,7 +285,59 @@
   }
 
   // ============================================================
-  // 工具函数与渲染同步
+  // 专注目标（+ 按钮与内联编辑）
+  // ============================================================
+  function renderGoalBar(editing = false) {
+    if (editing) {
+      btnAddGoal.classList.add("hidden");
+      goalActive.classList.add("hidden");
+      goalEditor.classList.remove("hidden");
+      inputGoal.value = settings.currentGoal || "";
+      setTimeout(() => {
+        inputGoal.focus();
+        inputGoal.select();
+      }, 20);
+      return;
+    }
+
+    goalEditor.classList.add("hidden");
+    if (settings.currentGoal && settings.currentGoal.trim()) {
+      btnAddGoal.classList.add("hidden");
+      goalActive.classList.remove("hidden");
+      goalText.textContent = settings.currentGoal.trim();
+    } else {
+      goalActive.classList.add("hidden");
+      btnAddGoal.classList.remove("hidden");
+    }
+  }
+
+  function commitGoal() {
+    settings.currentGoal = inputGoal.value.trim();
+    saveSettings();
+    renderGoalBar(false);
+  }
+
+  btnAddGoal.addEventListener("click", () => renderGoalBar(true));
+  goalText.addEventListener("click", () => renderGoalBar(true));
+  btnSaveGoal.addEventListener("click", commitGoal);
+  btnCancelGoal.addEventListener("click", () => renderGoalBar(false));
+  btnClearGoal.addEventListener("click", () => {
+    settings.currentGoal = "";
+    saveSettings();
+    renderGoalBar(false);
+  });
+  inputGoal.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      commitGoal();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      renderGoalBar(false);
+    }
+  });
+
+  // ============================================================
+  // 格式化、时钟渲染与统计
   // ============================================================
   function formatMMSS(ms) {
     const totalSec = Math.max(0, Math.ceil(ms / 1000));
@@ -217,8 +353,7 @@
   function rollNextRandomIntervalMs() {
     const minSec = settings.minGapMinutes * 60;
     const maxSec = Math.max(minSec, settings.maxGapMinutes * 60);
-    const chosenSec = minSec + Math.random() * (maxSec - minSec);
-    return Math.round(chosenSec * 1000);
+    return Math.round((minSec + Math.random() * (maxSec - minSec)) * 1000);
   }
 
   function renderClock(animateFlip = true) {
@@ -226,12 +361,10 @@
     minimalDigits.textContent = text;
     haloDigits.textContent = text;
 
-    // 进度计算
     const progress = state.totalMs > 0 ? Math.min(1, Math.max(0, 1 - state.remainingMs / state.totalMs)) : 0;
     minimalProgress.style.width = (progress * 100).toFixed(2) + "%";
     haloArc.style.strokeDashoffset = (HALO_CIRCUMFERENCE * progress).toFixed(2);
 
-    // 3D 翻页卡片（若分钟 >= 100 如 120 分钟，m1 显示十位以上如 "12"，平滑兼容）
     const m1 = mStr.length > 2 ? mStr.slice(0, mStr.length - 1) : mStr[0];
     const m2 = mStr[mStr.length - 1];
     setFlipDigit("m1", m1, animateFlip);
@@ -239,7 +372,6 @@
     setFlipDigit("s1", sStr[0], animateFlip);
     setFlipDigit("s2", sStr[1], animateFlip);
 
-    // 托盘提示更新
     if (window.desktopAPI) {
       const label =
         state.phase === "focus"
@@ -273,9 +405,13 @@
 
   function renderPhaseUI() {
     const running = state.phase === "focus";
+    const inSession = state.phase === "focus" || state.phase === "paused";
     bodyEl.classList.toggle("is-running", running);
     brandDot.classList.toggle("running", running);
     btnToggle.classList.toggle("running", running);
+
+    // 只要已经开始专注，就显示「提前结束」按钮
+    btnFinishEarly.classList.toggle("hidden", !inSession);
 
     statusPill.classList.remove("focusing", "resting");
     if (state.phase === "focus") {
@@ -305,9 +441,20 @@
   }
 
   function renderStats() {
+    const today = todayKey();
+    let todaySec = Math.floor(state.sessionElapsedMs / 1000);
+    let todayRests = state.sessionRests;
+
+    history.forEach((item) => {
+      if (item.date === today) {
+        todaySec += item.actualSeconds || 0;
+        todayRests += item.restsCompleted || 0;
+      }
+    });
+
     statSessionRests.textContent = state.sessionRests + " 次";
-    statTodayMinutes.textContent = Math.floor(stats.minutes) + " 分钟";
-    statTodayRests.textContent = stats.rests + " 次";
+    statTodayMinutes.textContent = Math.floor(todaySec / 60) + " 分钟";
+    statTodayRests.textContent = todayRests + " 次";
   }
 
   function applyTheme(theme) {
@@ -328,22 +475,18 @@
       btn.classList.toggle("active", active);
       btn.setAttribute("aria-selected", active ? "true" : "false");
     });
-    // 切换至翻页模式时无动画同步当前数字
     renderClock(false);
-    if (withFeedback) {
-      window.soundEngine.playSoftClick();
-    }
+    if (withFeedback) window.soundEngine.playSoftClick();
     saveSettings();
   }
 
   function cycleClockMode() {
     const idx = CLOCK_MODES.indexOf(settings.clockMode);
-    const next = CLOCK_MODES[(idx + 1) % CLOCK_MODES.length];
-    applyClockMode(next, true);
+    applyClockMode(CLOCK_MODES[(idx + 1) % CLOCK_MODES.length], true);
   }
 
   // ============================================================
-  // 计时与随机微休息核心调度
+  // 专注计时、提前结束与结算记录
   // ============================================================
   function startTickLoop() {
     if (state.tickHandle) return;
@@ -363,9 +506,10 @@
     if (state.phase === "idle") {
       state.totalMs = settings.focusMinutes * 60 * 1000;
       state.remainingMs = state.totalMs;
+      state.sessionElapsedMs = 0;
+      state.sessionStartedAt = Date.now();
       state.nextRestInMs = rollNextRandomIntervalMs();
       state.sessionRests = 0;
-      state.focusedAccumMs = 0;
     }
     state.phase = "focus";
     state.lastTickAt = Date.now();
@@ -388,11 +532,8 @@
       finishMicroRest(true);
       return;
     }
-    if (state.phase === "focus") {
-      pauseFocus();
-    } else {
-      startFocus();
-    }
+    if (state.phase === "focus") pauseFocus();
+    else startFocus();
   }
 
   function resetTimer() {
@@ -403,12 +544,84 @@
     state.phase = "idle";
     state.totalMs = settings.focusMinutes * 60 * 1000;
     state.remainingMs = state.totalMs;
+    state.sessionElapsedMs = 0;
+    state.sessionStartedAt = 0;
     state.nextRestInMs = 0;
     state.sessionRests = 0;
-    state.focusedAccumMs = 0;
+    state.pendingRecord = null;
     renderPhaseUI();
     renderClock(false);
     renderStats();
+  }
+
+  function openFinishDialog(endedEarly) {
+    stopTickLoop();
+    window.soundEngine.stopAmbient();
+    restOverlay.classList.remove("visible");
+
+    const actualSeconds = Math.max(1, Math.round(state.sessionElapsedMs / 1000));
+    const goal = (settings.currentGoal || "").trim();
+
+    state.pendingRecord = {
+      id: "rec_" + Date.now(),
+      date: todayKey(),
+      startedAt: state.sessionStartedAt || Date.now() - actualSeconds * 1000,
+      endedAt: Date.now(),
+      goal: goal || "自由专注",
+      plannedMinutes: settings.focusMinutes,
+      actualSeconds,
+      restsCompleted: state.sessionRests,
+      endedEarly: Boolean(endedEarly),
+      note: "",
+    };
+
+    if (!endedEarly) {
+      window.soundEngine.playSessionComplete(settings.chimePreset, settings.chimeVolume / 100);
+    } else {
+      window.soundEngine.playRestEnd(settings.chimePreset, settings.chimeVolume / 100);
+    }
+
+    state.phase = "idle";
+    renderPhaseUI();
+
+    completeBadge.textContent = endedEarly ? "提前结束" : "周期完成";
+    completeTitle.textContent = endedEarly ? "已记录本次专注" : "完成了一次深度专注";
+    if (goal) {
+      completeGoalLine.textContent = "目标：" + goal;
+      completeGoalLine.classList.remove("hidden");
+    } else {
+      completeGoalLine.classList.add("hidden");
+    }
+
+    completeSummary.textContent =
+      "本次实际专注 " +
+      formatDurationCN(actualSeconds) +
+      "（计划 " +
+      settings.focusMinutes +
+      " 分钟），完成 " +
+      state.sessionRests +
+      " 次大脑重放微休息。";
+
+    inputSessionNote.value = "";
+    completeOverlay.classList.add("visible");
+    completeOverlay.setAttribute("aria-hidden", "false");
+  }
+
+  function savePendingRecord(openAiAfter = false) {
+    if (state.pendingRecord) {
+      state.pendingRecord.note = inputSessionNote.value.trim();
+      history.unshift(state.pendingRecord);
+      if (history.length > 200) history = history.slice(0, 200);
+      saveHistory();
+      state.pendingRecord = null;
+    }
+    completeOverlay.classList.remove("visible");
+    completeOverlay.setAttribute("aria-hidden", "true");
+    resetTimer();
+    renderHistoryPanel();
+    if (openAiAfter) {
+      openDrawer("ai");
+    }
   }
 
   function triggerMicroRest(isManualTest = false) {
@@ -444,8 +657,6 @@
       window.soundEngine.playRestEnd(settings.chimePreset, settings.chimeVolume / 100);
       if (!state.restWasManualTest) {
         state.sessionRests += 1;
-        stats.rests += 1;
-        saveStats();
         renderStats();
       }
     }
@@ -464,7 +675,6 @@
       return;
     }
 
-    // 正常专注中的微休息结束 -> 抽取下一段随机间隔并继续专注
     state.nextRestInMs = rollNextRandomIntervalMs();
     state.phase = "focus";
     state.lastTickAt = Date.now();
@@ -472,27 +682,8 @@
     renderPhaseUI();
   }
 
-  function finishFocusSession() {
-    stopTickLoop();
-    window.soundEngine.stopAmbient();
-    window.soundEngine.playSessionComplete(settings.chimePreset, settings.chimeVolume / 100);
-
-    state.phase = "idle";
-    state.remainingMs = 0;
-    renderClock(true);
-    renderPhaseUI();
-
-    completeSummary.textContent =
-      "本次专注 " +
-      settings.focusMinutes +
-      " 分钟，穿插完成了 " +
-      state.sessionRests +
-      " 次大脑重放微休息。建议起身远眺或活动 10–20 分钟，再开启下一轮超日节律。";
-    completeOverlay.classList.add("visible");
-    completeOverlay.setAttribute("aria-hidden", "false");
-  }
-
   let lastRenderedSec = -1;
+  let lastRenderedMin = -1;
 
   function onTick() {
     const now = Date.now();
@@ -501,18 +692,8 @@
 
     if (state.phase === "focus") {
       state.remainingMs = Math.max(0, state.remainingMs - dt);
+      state.sessionElapsedMs += dt;
       state.nextRestInMs -= dt;
-      state.focusedAccumMs += dt;
-
-      // 每累计满 1 分钟写入今日专注统计
-      if (state.focusedAccumMs >= 60000) {
-        const minsToAdd = Math.floor(state.focusedAccumMs / 60000);
-        state.focusedAccumMs -= minsToAdd * 60000;
-        if (stats.date !== todayKey()) stats = loadStats();
-        stats.minutes += minsToAdd;
-        saveStats();
-        renderStats();
-      }
 
       const currentSec = Math.ceil(state.remainingMs / 1000);
       if (currentSec !== lastRenderedSec) {
@@ -521,12 +702,17 @@
         renderMeta();
       }
 
+      const elapsedMin = Math.floor(state.sessionElapsedMs / 60000);
+      if (elapsedMin !== lastRenderedMin) {
+        lastRenderedMin = elapsedMin;
+        renderStats();
+      }
+
       if (state.remainingMs <= 0) {
-        finishFocusSession();
+        openFinishDialog(false);
         return;
       }
 
-      // 只有剩余时间大于 25 秒时才触发微休息，避免最后几秒突兀打断
       if (state.nextRestInMs <= 0 && state.remainingMs > 25000) {
         triggerMicroRest(false);
       }
@@ -540,7 +726,364 @@
   }
 
   // ============================================================
-  // 设置面板同步与事件绑定
+  // 专注历史记录面板
+  // ============================================================
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function renderHistoryPanel() {
+    const totalSessions = history.length;
+    const totalSec = history.reduce((sum, r) => sum + (r.actualSeconds || 0), 0);
+    const totalRests = history.reduce((sum, r) => sum + (r.restsCompleted || 0), 0);
+
+    histTotalSessions.textContent = String(totalSessions);
+    histTotalMinutes.textContent = Math.round(totalSec / 60) + "m";
+    histTotalRests.textContent = String(totalRests);
+
+    if (history.length === 0) {
+      historyList.innerHTML =
+        '<div class="empty-state">还没有专注记录，完成或提前结束一次专注后会自动保存在这里。</div>';
+      return;
+    }
+
+    historyList.innerHTML = history
+      .map((item) => {
+        const badge = item.endedEarly
+          ? '<span class="history-badge early">提前结束</span>'
+          : '<span class="history-badge">完整完成</span>';
+        const noteHtml = item.note
+          ? '<div class="history-note">' + escapeHtml(item.note) + "</div>"
+          : "";
+        return (
+          '<div class="history-item">' +
+          '<div class="history-item-top">' +
+          '<div class="history-goal">' + escapeHtml(item.goal || "自由专注") + "</div>" +
+          '<button class="history-del" data-del-id="' + escapeHtml(item.id) + '" title="删除此条">×</button>' +
+          "</div>" +
+          '<div class="history-meta">' +
+          badge +
+          "<span>" + formatDurationCN(item.actualSeconds || 0) + " / 计划 " + (item.plannedMinutes || 90) + " 分钟</span>" +
+          "<span>· 重放 " + (item.restsCompleted || 0) + " 次</span>" +
+          "<span>· " + formatDateTime(item.endedAt || item.startedAt) + "</span>" +
+          "</div>" +
+          noteHtml +
+          "</div>"
+        );
+      })
+      .join("");
+  }
+
+  historyList.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-del-id]");
+    if (!btn) return;
+    const id = btn.getAttribute("data-del-id");
+    history = history.filter((item) => item.id !== id);
+    saveHistory();
+    renderHistoryPanel();
+    renderStats();
+  });
+
+  btnClearHistory.addEventListener("click", () => {
+    if (history.length === 0) return;
+    history = [];
+    saveHistory();
+    renderHistoryPanel();
+    renderStats();
+  });
+
+  // ============================================================
+  // AI 进展分析面板
+  // ============================================================
+  function syncAiUI() {
+    inputAiBaseUrl.value = aiConfig.baseUrl || "";
+    inputAiModel.value = aiConfig.model || "";
+    inputAiKey.value = aiConfig.apiKey || "";
+    aiProviderBtns.forEach((b) => {
+      b.classList.toggle("active", b.dataset.provider === aiConfig.provider);
+    });
+    aiScopeBtns.forEach((b) => {
+      b.classList.toggle("active", b.dataset.scope === aiConfig.scope);
+    });
+    if (lastAiReport && lastAiReport.content) {
+      aiResultMeta.textContent = "上次分析 · " + formatDateTime(lastAiReport.createdAt);
+      aiResultBody.innerHTML = renderSimpleMarkdown(lastAiReport.content);
+      btnCopyAI.classList.remove("hidden");
+    }
+  }
+
+  function setAiStatus(text, type = "") {
+    aiStatusMsg.textContent = text;
+    aiStatusMsg.className = "ai-status-msg" + (type ? " " + type : "");
+  }
+
+  function renderSimpleMarkdown(md) {
+    const lines = escapeHtml(md).split(/\r?\n/);
+    let html = "";
+    let inList = false;
+
+    const inlineFormat = (s) =>
+      s
+        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+        .replace(/`([^`]+)`/g, "<code>$1</code>");
+
+    for (const rawLine of lines) {
+      const line = rawLine.trim();
+      if (!line) {
+        if (inList) {
+          html += "</ul>";
+          inList = false;
+        }
+        continue;
+      }
+      if (/^#{1,4}\s+/.test(line)) {
+        if (inList) {
+          html += "</ul>";
+          inList = false;
+        }
+        html += "<h4>" + inlineFormat(line.replace(/^#{1,4}\s+/, "")) + "</h4>";
+      } else if (/^[-*•]\s+/.test(line) || /^\d+\.\s+/.test(line)) {
+        if (!inList) {
+          html += "<ul>";
+          inList = true;
+        }
+        html += "<li>" + inlineFormat(line.replace(/^([-*•]|\d+\.)\s+/, "")) + "</li>";
+      } else {
+        if (inList) {
+          html += "</ul>";
+          inList = false;
+        }
+        html += "<p>" + inlineFormat(line) + "</p>";
+      }
+    }
+    if (inList) html += "</ul>";
+    return html || "<p>（无返回内容）</p>";
+  }
+
+  function getScopedHistory(scope) {
+    const today = todayKey();
+    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    if (scope === "today") {
+      return history.filter((item) => item.date === today);
+    }
+    if (scope === "7d") {
+      return history.filter((item) => (item.endedAt || item.startedAt) >= sevenDaysAgo);
+    }
+    return history.slice(0, 60);
+  }
+
+  async function runAiConnectionTest() {
+    if (!window.desktopAPI || !window.desktopAPI.aiChat) {
+      setAiStatus("当前环境不支持主进程 AI 请求。", "err");
+      return;
+    }
+    setAiStatus("正在测试模型连接...");
+    btnTestAI.disabled = true;
+    try {
+      const res = await window.desktopAPI.aiChat({
+        baseUrl: aiConfig.baseUrl,
+        apiKey: aiConfig.apiKey,
+        model: aiConfig.model,
+        messages: [{ role: "user", content: "请仅回复：连接成功" }],
+      });
+      if (res.ok) {
+        setAiStatus("连接成功，可以开始分析你的专注进展。", "ok");
+      } else {
+        setAiStatus(res.error || "连接失败", "err");
+      }
+    } finally {
+      btnTestAI.disabled = false;
+    }
+  }
+
+  async function runAiProgressAnalysis() {
+    if (!window.desktopAPI || !window.desktopAPI.aiChat) {
+      setAiStatus("当前环境不支持主进程 AI 请求。", "err");
+      return;
+    }
+
+    const records = getScopedHistory(aiConfig.scope);
+    if (records.length === 0) {
+      const label = aiConfig.scope === "today" ? "今天" : aiConfig.scope === "7d" ? "近 7 天" : "历史";
+      setAiStatus(label + "暂无专注记录，先完成或提前结束一次专注吧。", "err");
+      return;
+    }
+
+    const totalSec = records.reduce((s, r) => s + (r.actualSeconds || 0), 0);
+    const totalRests = records.reduce((s, r) => s + (r.restsCompleted || 0), 0);
+    const earlyCount = records.filter((r) => r.endedEarly).length;
+
+    const recordLines = records
+      .slice(0, 30)
+      .map((r, i) => {
+        return (
+          (i + 1) +
+          ". [" +
+          formatDateTime(r.endedAt || r.startedAt) +
+          "] 目标：" +
+          (r.goal || "自由专注") +
+          " | 实际：" +
+          formatDurationCN(r.actualSeconds || 0) +
+          "（计划 " +
+          (r.plannedMinutes || 90) +
+          " 分钟，" +
+          (r.endedEarly ? "提前结束" : "完整完成") +
+          "）| 10秒微休息：" +
+          (r.restsCompleted || 0) +
+          " 次" +
+          (r.note ? " | 备注：" + r.note : "")
+        );
+      })
+      .join("\n");
+
+    const scopeName = aiConfig.scope === "today" ? "今日" : aiConfig.scope === "7d" ? "近 7 天" : "全部";
+    const systemPrompt =
+      "你是一位精通神经科学（间隙效应 Gap Effect 与超日节律）且温和务实的学习专注教练。请根据用户的专注记录与目标，用简洁清晰的中文输出复盘分析，包含 3 个部分：### 1. 进展与亮点、### 2. 节奏与专注诊断（关注实际时长、提前结束规律、微休息节奏）、### 3. 下一步可执行建议（给出具体时长或目标拆分建议）。避免空洞鸡汤，控制在 350 字以内。";
+    const userPrompt =
+      "请分析我【" +
+      scopeName +
+      "】的专注数据：\n" +
+      "- 专注次数：" +
+      records.length +
+      " 次（其中提前结束 " +
+      earlyCount +
+      " 次）\n" +
+      "- 累计专注：" +
+      formatDurationCN(totalSec) +
+      "\n" +
+      "- 累计 10 秒闭眼微休息重放：" +
+      totalRests +
+      " 次\n" +
+      "- 当前设定目标：" +
+      (settings.currentGoal || "未设定") +
+      "\n\n详细记录：\n" +
+      recordLines;
+
+    btnRunAI.disabled = true;
+    btnRunAI.textContent = "AI 正在分析你的专注进展...";
+    setAiStatus("正在请求模型分析...", "");
+
+    try {
+      const res = await window.desktopAPI.aiChat({
+        baseUrl: aiConfig.baseUrl,
+        apiKey: aiConfig.apiKey,
+        model: aiConfig.model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+      });
+
+      if (res.ok) {
+        lastAiReport = { createdAt: Date.now(), scope: scopeName, content: res.content };
+        safeSave(STORAGE_KEY_AI_LAST, lastAiReport);
+        aiResultMeta.textContent = scopeName + "进展分析 · " + formatDateTime(lastAiReport.createdAt);
+        aiResultBody.innerHTML = renderSimpleMarkdown(res.content);
+        btnCopyAI.classList.remove("hidden");
+        setAiStatus("分析完成。", "ok");
+      } else {
+        setAiStatus(res.error || "分析失败，请检查接口配置。", "err");
+      }
+    } finally {
+      btnRunAI.disabled = false;
+      btnRunAI.textContent = "分析我的专注进展";
+    }
+  }
+
+  aiProviderBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const p = btn.dataset.provider;
+      aiConfig.provider = p;
+      if (AI_PRESETS[p]) {
+        aiConfig.baseUrl = AI_PRESETS[p].baseUrl;
+        aiConfig.model = AI_PRESETS[p].model;
+      }
+      saveAiConfig();
+      syncAiUI();
+      setAiStatus("已切换为 " + btn.textContent + " 预设，请确认 API Key。", "");
+    });
+  });
+
+  inputAiBaseUrl.addEventListener("input", (e) => {
+    aiConfig.baseUrl = e.target.value.trim();
+    saveAiConfig();
+  });
+  inputAiModel.addEventListener("input", (e) => {
+    aiConfig.model = e.target.value.trim();
+    saveAiConfig();
+  });
+  inputAiKey.addEventListener("input", (e) => {
+    aiConfig.apiKey = e.target.value.trim();
+    saveAiConfig();
+  });
+
+  btnToggleKeyVis.addEventListener("click", () => {
+    const isPwd = inputAiKey.type === "password";
+    inputAiKey.type = isPwd ? "text" : "password";
+    btnToggleKeyVis.textContent = isPwd ? "隐藏" : "显示";
+  });
+
+  aiScopeBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      aiConfig.scope = btn.dataset.scope;
+      saveAiConfig();
+      syncAiUI();
+    });
+  });
+
+  btnTestAI.addEventListener("click", runAiConnectionTest);
+  btnRunAI.addEventListener("click", runAiProgressAnalysis);
+  btnCopyAI.addEventListener("click", async () => {
+    if (!lastAiReport || !lastAiReport.content) return;
+    try {
+      await navigator.clipboard.writeText(lastAiReport.content);
+      btnCopyAI.textContent = "已复制";
+      setTimeout(() => {
+        btnCopyAI.textContent = "复制";
+      }, 1500);
+    } catch {}
+  });
+
+  // ============================================================
+  // 抽屉与 Tab 切换
+  // ============================================================
+  function switchDrawerTab(tabName) {
+    drawerTabs.forEach((t) => t.classList.toggle("active", t.dataset.tab === tabName));
+    Object.keys(tabPanels).forEach((key) => {
+      tabPanels[key].classList.toggle("active", key === tabName);
+    });
+    if (tabName === "history") renderHistoryPanel();
+    if (tabName === "ai") syncAiUI();
+  }
+
+  function openDrawer(tabName = "settings") {
+    switchDrawerTab(tabName);
+    settingsDrawer.classList.add("open");
+    drawerBackdrop.classList.add("open");
+  }
+
+  function closeDrawer() {
+    settingsDrawer.classList.remove("open");
+    drawerBackdrop.classList.remove("open");
+  }
+
+  drawerTabs.forEach((tab) => {
+    tab.addEventListener("click", () => switchDrawerTab(tab.dataset.tab));
+  });
+
+  btnBrandSettings.addEventListener("click", () => openDrawer("settings"));
+  btnQuickAI.addEventListener("click", () => openDrawer("ai"));
+  btnSettings.addEventListener("click", () => openDrawer("settings"));
+  statsBar.addEventListener("click", () => openDrawer("history"));
+  btnCloseSettings.addEventListener("click", closeDrawer);
+  drawerBackdrop.addEventListener("click", closeDrawer);
+
+  // ============================================================
+  // 设置项与主操作绑定
   // ============================================================
   function syncSettingsUI() {
     inputFocusMinutes.value = settings.focusMinutes;
@@ -568,46 +1111,31 @@
     renderMeta();
   }
 
-  function openDrawer() {
-    settingsDrawer.classList.add("open");
-    drawerBackdrop.classList.add("open");
-  }
-
-  function closeDrawer() {
-    settingsDrawer.classList.remove("open");
-    drawerBackdrop.classList.remove("open");
-  }
-
-  // 点击时钟本体切换风格（极简 / 翻页 / 光环）
   clockTrigger.addEventListener("click", cycleClockMode);
   clockTrigger.addEventListener("keydown", (e) => {
     if (e.key === "Enter") cycleClockMode();
   });
-
   modeDotButtons.forEach((btn) => {
     btn.addEventListener("click", () => applyClockMode(btn.dataset.mode, true));
   });
 
   btnToggle.addEventListener("click", toggleFocus);
   btnReset.addEventListener("click", resetTimer);
+  btnFinishEarly.addEventListener("click", () => {
+    if (state.phase === "focus" || state.phase === "paused") {
+      openFinishDialog(true);
+    }
+  });
   btnTestRest.addEventListener("click", () => {
     if (state.phase !== "rest") triggerMicroRest(true);
   });
   btnSkipRest.addEventListener("click", () => finishMicroRest(true));
-  btnCompleteDone.addEventListener("click", () => {
-    completeOverlay.classList.remove("visible");
-    completeOverlay.setAttribute("aria-hidden", "true");
-    resetTimer();
-  });
+  btnCompleteDone.addEventListener("click", () => savePendingRecord(false));
+  btnCompleteAI.addEventListener("click", () => savePendingRecord(true));
 
-  // 标题栏动作
   btnTheme.addEventListener("click", () => {
     applyTheme(settings.theme === "cream" ? "dark" : "cream");
   });
-
-  btnSettings.addEventListener("click", openDrawer);
-  btnCloseSettings.addEventListener("click", closeDrawer);
-  drawerBackdrop.addEventListener("click", closeDrawer);
 
   if (window.desktopAPI) {
     btnMin.addEventListener("click", () => window.desktopAPI.minimize());
@@ -628,7 +1156,6 @@
     window.desktopAPI.onTrayToggleTimer(() => toggleFocus());
   }
 
-  // 全屏模式下无鼠标移动 3 秒自动淡出控件
   let idleTimer = null;
   function bumpFullscreenActivity() {
     if (!bodyEl.classList.contains("is-fullscreen")) return;
@@ -643,7 +1170,6 @@
   window.addEventListener("mousemove", bumpFullscreenActivity);
   window.addEventListener("mousedown", bumpFullscreenActivity);
 
-  // 设置项监听
   function updateFocusMinutes(min) {
     settings.focusMinutes = min;
     saveSettings();
@@ -719,9 +1245,9 @@
     renderMeta();
   });
 
-  // 键盘快捷键
   window.addEventListener("keydown", (e) => {
-    if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "SELECT")) return;
+    const tag = e.target && e.target.tagName;
+    if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return;
     if (e.code === "Space") {
       e.preventDefault();
       toggleFocus();
@@ -742,7 +1268,10 @@
   // 初始化
   applyTheme(settings.theme);
   applyClockMode(settings.clockMode, false);
+  renderGoalBar(false);
   syncSettingsUI();
+  syncAiUI();
+  renderHistoryPanel();
   renderPhaseUI();
   renderClock(false);
   renderStats();
