@@ -1,8 +1,8 @@
 {
   "name": "random-chime",
   "productName": "随机提示音",
-  "version": "1.1.2",
-  "description": "基于神经科学间隙效应（Gap Effect）的极简随机微休息专注计时器",
+  "version": "2.0.0",
+  "description": "Anew (日新) · 融合神经科学随机提示音专注舱与 AI 助手的全能待办效率工作台",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -34,7 +34,7 @@
       "icon": "assets/icon.png"
     },
     "portable": {
-      "artifactName": "随机提示音-${version}.exe"
+      "artifactName": "Anew-日新-${version}.exe"
     },
     "npmRebuild": false
   },

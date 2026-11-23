@@ -2,6 +2,7 @@ const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("desktopAPI", {
   minimize: () => ipcRenderer.invoke("window:minimize"),
+  toggleMaximize: () => ipcRenderer.invoke("window:toggle-maximize"),
   hideToTray: () => ipcRenderer.invoke("window:hide-to-tray"),
   closeApp: () => ipcRenderer.invoke("window:close"),
   toggleFullscreen: () => ipcRenderer.invoke("window:toggle-fullscreen"),

@@ -1898,3 +1898,1294 @@ body.drawer-open .titlebar {
 .ai-result-body li {
   margin-bottom: 4px;
 }
+
+/* ============================================================
+   Anew 日新 v2.0.0 · 全能三栏效率工作台样式（极简米白 & 夜间双主题）
+   ============================================================ */
+
+:root,
+html[data-theme="cream"] {
+  --p1-color: #c85248;
+  --p1-bg: rgba(200, 82, 72, 0.11);
+  --p2-color: #c6863c;
+  --p2-bg: rgba(198, 134, 60, 0.12);
+  --p3-color: #4f7ea8;
+  --p3-bg: rgba(79, 126, 168, 0.11);
+  --p4-color: #827c72;
+  --p4-bg: rgba(130, 124, 114, 0.11);
+  --sidebar-bg: #f0ece2;
+}
+
+html[data-theme="dark"] {
+  --p1-color: #e06c62;
+  --p1-bg: rgba(224, 108, 98, 0.15);
+  --p2-color: #dfa055;
+  --p2-bg: rgba(223, 160, 85, 0.15);
+  --p3-color: #6b9bc7;
+  --p3-bg: rgba(107, 155, 199, 0.15);
+  --p4-color: #8d877d;
+  --p4-bg: rgba(141, 135, 125, 0.15);
+  --sidebar-bg: #191816;
+}
+
+/* 顶部全局搜索 */
+.titlebar {
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.titlebar-center {
+  flex: 1;
+  max-width: 320px;
+  margin: 0 16px;
+  -webkit-app-region: no-drag;
+}
+
+.global-search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 29px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.global-search:focus-within {
+  border-color: var(--accent);
+  background: var(--surface);
+}
+
+.global-search svg {
+  width: 13.5px;
+  height: 13.5px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.global-search input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+  outline: none;
+  user-select: text;
+}
+
+/* 主三栏工作区 */
+.workspace {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  padding-top: 46px;
+  display: flex;
+  overflow: hidden;
+}
+
+/* 左侧边栏 */
+.sidebar {
+  width: 228px;
+  flex-shrink: 0;
+  height: 100%;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: width 0.24s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease;
+  overflow: hidden;
+}
+
+body.sidebar-collapsed .sidebar {
+  width: 0;
+  border-right: none;
+  opacity: 0;
+}
+
+.sidebar-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.nav-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nav-group-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px 4px;
+}
+
+.nav-group-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  padding: 0 8px 4px;
+}
+
+.nav-group-row .nav-group-label {
+  padding: 0;
+}
+
+.nav-add-btn {
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-add-btn:hover {
+  background: var(--bg-subtle);
+  color: var(--accent);
+}
+
+.new-list-box {
+  padding: 2px 6px 6px;
+}
+
+.new-list-box input {
+  width: 100%;
+  height: 28px;
+  padding: 0 9px;
+  border-radius: 7px;
+  border: 1px solid var(--accent);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+  outline: none;
+  user-select: text;
+}
+
+.nav-item {
+  width: 100%;
+  height: 33px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.16s ease, color 0.16s ease;
+}
+
+.nav-item:hover {
+  background: var(--bg-subtle);
+  color: var(--text);
+}
+
+.nav-item.active {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.focus-nav-item.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.nav-icon {
+  font-size: 13.5px;
+  width: 18px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.nav-label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-badge {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.nav-badge.accent {
+  background: var(--accent);
+  color: #fffdf9;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 10.5px;
+}
+
+.nav-list-del {
+  opacity: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 0 3px;
+  cursor: pointer;
+}
+
+.nav-item:hover .nav-list-del {
+  opacity: 1;
+}
+
+.nav-list-del:hover {
+  color: var(--p1-color);
+}
+
+.sidebar-footer {
+  padding: 12px 14px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-subtle);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sf-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11.5px;
+}
+
+.sf-title {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.sf-rate {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.sf-progress-bar {
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border-strong);
+  overflow: hidden;
+}
+
+.sf-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+
+.sf-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* 中间主工作区 */
+.main-pane {
+  flex: 1;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.module-view {
+  display: none;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  padding: 20px 26px;
+  overflow: hidden;
+}
+
+.module-view.active {
+  display: flex;
+}
+
+.module-view.focus-pod-view {
+  padding: 0;
+}
+
+.module-view.focus-pod-view .stage {
+  padding: 22px 24px 22px;
+}
+
+.view-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+
+.view-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.view-title {
+  font-size: 21px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.01em;
+}
+
+.view-subtitle {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.view-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.compact-select,
+.compact-date {
+  height: 30px;
+  padding: 0 9px;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+}
+
+.compact-select.full,
+.compact-date.full {
+  width: 100%;
+}
+
+.btn-secondary.compact {
+  height: 30px;
+  padding: 0 12px;
+  font-size: 12px;
+}
+
+/* 快速添加任务卡片 */
+.quick-capture-card {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.qc-main-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qc-plus {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.qc-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 13.5px;
+  outline: none;
+  user-select: text;
+}
+
+.qc-ai-btn {
+  height: 28px;
+  padding: 0 11px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.qc-ai-btn:hover {
+  border-color: var(--accent);
+}
+
+.qc-submit-btn {
+  height: 28px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 999px;
+  background: var(--text);
+  color: var(--bg);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.qc-options-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border);
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+
+.qc-opt-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.qc-mini-select,
+.qc-mini-date {
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 11.5px;
+  outline: none;
+}
+
+/* 任务列表滚动区 */
+.tasks-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.task-list-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.task-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 13px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: border-color 0.16s ease, transform 0.16s ease, background-color 0.16s ease;
+}
+
+.task-row:hover {
+  border-color: var(--border-strong);
+}
+
+.task-row.selected {
+  border-color: var(--accent);
+  background: var(--surface-elevated);
+}
+
+.task-row.done {
+  opacity: 0.62;
+}
+
+.task-row.done .task-title {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+
+.task-row-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.task-checkbox {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.priority-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.priority-dot.p1, .mq-dot.p1 { background: var(--p1-color); }
+.priority-dot.p2, .mq-dot.p2 { background: var(--p2-color); }
+.priority-dot.p3, .mq-dot.p3 { background: var(--p3-color); }
+.priority-dot.p4, .mq-dot.p4 { background: var(--p4-color); }
+
+.task-main-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.task-title {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.task-badges {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.t-badge {
+  padding: 1px 7px;
+  border-radius: 6px;
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+}
+
+.t-badge.p1 { background: var(--p1-bg); color: var(--p1-color); font-weight: 500; }
+.t-badge.p2 { background: var(--p2-bg); color: var(--p2-color); font-weight: 500; }
+.t-badge.p3 { background: var(--p3-bg); color: var(--p3-color); }
+.t-badge.p4 { background: var(--p4-bg); color: var(--p4-color); }
+
+.t-badge.focus-stat {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.task-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.btn-task-focus {
+  height: 27px;
+  padding: 0 11px;
+  border-radius: 999px;
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.btn-task-focus:hover {
+  background: var(--accent);
+  color: #fffdf9;
+}
+
+.completed-fold-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.completed-fold-toggle {
+  align-self: flex-start;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+
+.completed-fold-count {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ==================== 四象限矩阵视图 ==================== */
+.matrix-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 12px;
+  overflow: hidden;
+}
+
+.matrix-quadrant {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.mq-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.mq-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.mq-title {
+  font-size: 13px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.mq-count {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.mq-quick-add input {
+  width: 100%;
+  height: 29px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px dashed var(--border-strong);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12px;
+  outline: none;
+  user-select: text;
+}
+
+.mq-quick-add input:focus {
+  border-style: solid;
+  border-color: var(--accent);
+}
+
+.mq-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* ==================== 看板视图 ==================== */
+.kanban-board {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  overflow: hidden;
+}
+
+.kanban-col {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.kb-col-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+}
+
+.kb-col-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.kb-col-count {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.kb-quick-add input {
+  width: 100%;
+  height: 29px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px dashed var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+  outline: none;
+  user-select: text;
+}
+
+.kb-cards {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kb-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  padding: 10px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  cursor: pointer;
+}
+
+.kb-card:hover {
+  border-color: var(--border-strong);
+}
+
+.kb-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.kb-card-title {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.kb-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.kb-move-btns {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.kb-move-btn {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-secondary);
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.kb-move-btn:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+/* ==================== 日历月视图 ==================== */
+.calendar-layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 14px;
+  overflow: hidden;
+}
+
+.calendar-grid-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.cal-days-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: 1fr;
+  gap: 4px;
+}
+
+.cal-day-cell {
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  padding: 5px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.cal-day-cell.other-month {
+  opacity: 0.38;
+}
+
+.cal-day-cell.today {
+  border-color: var(--accent);
+}
+
+.cal-day-cell.selected {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.cal-day-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.cal-focus-dot {
+  font-size: 9.5px;
+  color: var(--rest-accent);
+}
+
+.cal-day-dots {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.cal-mini-task {
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text-secondary);
+}
+
+.calendar-day-detail {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.cal-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cal-detail-header h3 {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cal-detail-focus {
+  font-size: 11.5px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 2px 9px;
+  border-radius: 999px;
+}
+
+.cal-day-add input {
+  width: 100%;
+  height: 31px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px dashed var(--border-strong);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12px;
+  outline: none;
+  user-select: text;
+}
+
+.cal-day-tasks {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ==================== 右侧任务详情检查器 ==================== */
+.inspector-pane {
+  width: 310px;
+  flex-shrink: 0;
+  height: 100%;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.insp-header {
+  height: 48px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.insp-status-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.insp-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.insp-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.insp-title-input {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  padding: 4px 0 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  outline: none;
+  user-select: text;
+}
+
+.insp-title-input:focus {
+  border-bottom-color: var(--accent);
+}
+
+.insp-focus-card {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ifc-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ifc-label {
+  font-size: 10.5px;
+  color: var(--text-secondary);
+}
+
+.ifc-val {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.ifc-start-btn {
+  height: 30px;
+  padding: 0 13px;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fffdf9;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.insp-props-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.insp-prop {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.insp-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.insp-sec-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.insp-subtask-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.subtask-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: var(--bg);
+  font-size: 12px;
+}
+
+.subtask-item.done span {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.subtask-item span {
+  flex: 1;
+  word-break: break-word;
+}
+
+.subtask-del {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.insp-subtask-add input {
+  width: 100%;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px dashed var(--border-strong);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12px;
+  outline: none;
+  user-select: text;
+}
+
+.insp-note-area {
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.55;
+  resize: vertical;
+  outline: none;
+  user-select: text;
+}
+
+/* 专注舱绑定任务的子任务快捷勾选条 */
+.bound-task-subtasks {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: 580px;
+}
+
+.bts-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.bts-chip.done {
+  opacity: 0.6;
+  text-decoration: line-through;
+}
+
+/* 全局迷你专注悬浮条 */
+.mini-focus-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 32;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: var(--surface-elevated);
+  border: 1px solid var(--accent);
+  box-shadow: var(--shadow-soft);
+}
+
+.mfb-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: colonPulse 1.6s infinite;
+}
+
+.mfb-goal {
+  font-size: 12.5px;
+  font-weight: 500;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mfb-time {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.mfb-btn {
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 11.5px;
+  cursor: pointer;
+}
+
+.mfb-btn.accent {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.complete-check-task {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  color: var(--text);
+  margin-bottom: 14px;
+  cursor: pointer;
+}
+
+/* ==================== 沉浸全屏模式：隐藏三栏与待办，仅显示纯享时钟 ==================== */
+body.is-fullscreen .workspace {
+  padding-top: 0;
+}
+
+body.is-fullscreen .sidebar,
+body.is-fullscreen .inspector-pane,
+body.is-fullscreen .mini-focus-bar,
+body.is-fullscreen #viewTasks,
+body.is-fullscreen #viewMatrix,
+body.is-fullscreen #viewKanban,
+body.is-fullscreen #viewCalendar {
+  display: none !important;
+}
+
+body.is-fullscreen #viewFocus {
+  display: flex !important;
+  width: 100%;
+  height: 100%;
+}

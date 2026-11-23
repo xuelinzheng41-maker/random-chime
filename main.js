@@ -22,10 +22,10 @@ if (!gotLock) {
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 780,
-    height: 580,
-    minWidth: 460,
-    minHeight: 420,
+    width: 1180,
+    height: 760,
+    minWidth: 820,
+    minHeight: 560,
     frame: false,
     titleBarStyle: "hidden",
     backgroundColor: "#F6F3EC",
@@ -65,7 +65,7 @@ function createTray() {
   const trayIconPath = path.join(__dirname, "assets", "tray.png");
   const icon = nativeImage.createFromPath(trayIconPath);
   tray = new Tray(icon);
-  tray.setToolTip("随机提示音 · 准备专注");
+  tray.setToolTip("Anew 日新 · 准备专注");
 
   const contextMenu = Menu.buildFromTemplate([
     {
@@ -87,7 +87,7 @@ function createTray() {
     },
     { type: "separator" },
     {
-      label: "退出随机提示音",
+      label: "退出 Anew 日新",
       click: () => {
         isQuitting = true;
         app.quit();
@@ -108,6 +108,17 @@ function createTray() {
 
 ipcMain.handle("window:minimize", () => {
   if (mainWindow) mainWindow.minimize();
+});
+
+ipcMain.handle("window:toggle-maximize", () => {
+  if (!mainWindow) return false;
+  if (mainWindow.isMaximized()) {
+    mainWindow.unmaximize();
+    return false;
+  } else {
+    mainWindow.maximize();
+    return true;
+  }
 });
 
 ipcMain.handle("window:hide-to-tray", () => {
