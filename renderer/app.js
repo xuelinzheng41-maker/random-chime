@@ -225,8 +225,11 @@
   const inputAiBaseUrl = $("inputAiBaseUrl");
   const aiEndpointPreview = $("aiEndpointPreview");
   const inputAiModel = $("inputAiModel");
-  const aiModelList = $("aiModelList");
+  const modelCombo = $("modelCombo");
+  const btnModelDropdown = $("btnModelDropdown");
+  const modelDropdown = $("modelDropdown");
   const btnFetchModels = $("btnFetchModels");
+  let fetchedModels = [];
   const inputAiKey = $("inputAiKey");
   const btnToggleKeyVis = $("btnToggleKeyVis");
   const btnTestAI = $("btnTestAI");
@@ -1036,10 +1039,9 @@
         apiKey: aiConfig.apiKey,
       });
       if (res.ok && res.models.length > 0) {
-        aiModelList.innerHTML = res.models
-          .map((id) => '<option value="' + escapeHtml(id) + '"></option>')
-          .join("");
-        setAiStatus("已拉取 " + res.models.length + " 个模型，点击模型输入框即可下拉选择。", "ok");
+        fetchedModels = res.models;
+        setAiStatus("已拉取 " + res.models.length + " 个模型，可在下方直接点选或输入筛选。", "ok");
+        openModelDropdown(true);
       } else if (res.ok) {
         setAiStatus("接口未返回模型列表，请直接手动输入模型名。", "");
       } else {
@@ -1049,9 +1051,84 @@
       btnFetchModels.disabled = false;
     }
   });
+  function renderModelDropdown(filterText = "") {
+    if (fetchedModels.length === 0) {
+      modelDropdown.innerHTML =
+        '<div class="model-option-empty">尚未拉取模型，请先点击右上角「拉取模型列表」</div>';
+      return;
+    }
+    const q = filterText.trim().toLowerCase();
+    const list = q
+      ? fetchedModels.filter((m) => m.toLowerCase().includes(q))
+      : fetchedModels;
+
+    if (list.length === 0) {
+      modelDropdown.innerHTML = '<div class="model-option-empty">没有匹配的模型，可直接回车使用当前输入</div>';
+      return;
+    }
+
+    modelDropdown.innerHTML = list
+      .map((id) => {
+        const selected = id === aiConfig.model ? " selected" : "";
+        return (
+          '<button type="button" class="model-option' +
+          selected +
+          '" data-model-id="' +
+          escapeHtml(id) +
+          '">' +
+          escapeHtml(id) +
+          "</button>"
+        );
+      })
+      .join("");
+  }
+
+  function openModelDropdown(showAll = false) {
+    renderModelDropdown(showAll ? "" : inputAiModel.value);
+    modelDropdown.classList.remove("hidden");
+  }
+
+  function closeModelDropdown() {
+    modelDropdown.classList.add("hidden");
+  }
+
   inputAiModel.addEventListener("input", (e) => {
     aiConfig.model = e.target.value.trim();
     saveAiConfig();
+    if (fetchedModels.length > 0) {
+      openModelDropdown(false);
+    }
+  });
+
+  inputAiModel.addEventListener("focus", () => {
+    if (fetchedModels.length > 0) {
+      openModelDropdown(true);
+    }
+  });
+
+  btnModelDropdown.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (modelDropdown.classList.contains("hidden")) {
+      openModelDropdown(true);
+    } else {
+      closeModelDropdown();
+    }
+  });
+
+  modelDropdown.addEventListener("click", (e) => {
+    const opt = e.target.closest("[data-model-id]");
+    if (!opt) return;
+    const id = opt.getAttribute("data-model-id");
+    aiConfig.model = id;
+    inputAiModel.value = id;
+    saveAiConfig();
+    closeModelDropdown();
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!modelCombo.contains(e.target)) {
+      closeModelDropdown();
+    }
   });
   inputAiKey.addEventListener("input", (e) => {
     aiConfig.apiKey = e.target.value.trim();

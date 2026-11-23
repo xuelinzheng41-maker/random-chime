@@ -404,14 +404,17 @@
           <span class="endpoint-preview" id="aiEndpointPreview"></span>
         </label>
 
-        <label class="field-label">
+        <div class="field-label">
           <span class="field-label-row">
             <span>模型名称 (Model)</span>
             <button class="text-btn" id="btnFetchModels" type="button">拉取模型列表</button>
           </span>
-          <input type="text" id="inputAiModel" list="aiModelList" class="field-input" placeholder="输入或拉取模型 ID，如 gpt-4o-mini / deepseek-chat" />
-          <datalist id="aiModelList"></datalist>
-        </label>
+          <div class="model-combo" id="modelCombo">
+            <input type="text" id="inputAiModel" class="field-input model-combo-input" placeholder="输入或点击右侧箭头选择模型 ID" autocomplete="off" />
+            <button class="model-combo-toggle" id="btnModelDropdown" type="button" title="展开/收起模型列表" aria-label="展开模型列表">▾</button>
+            <div class="model-dropdown hidden" id="modelDropdown"></div>
+          </div>
+        </div>
 
         <label class="field-label">
           <span>API Key（本地 Ollama 可留空）</span>
