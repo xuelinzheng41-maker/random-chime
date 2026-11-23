@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="cream" data-clock-mode="minimal">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>随机提示音 · 间隙效应专注计时器</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- 自定义无边框标题栏 -->
+  <header class="titlebar" id="titlebar">
+    <div class="titlebar-left">
+      <span class="brand-dot" id="brandDot"></span>
+      <span class="brand-name">随机提示音</span>
+      <span class="status-pill" id="statusPill">准备专注</span>
+    </div>
+    <div class="titlebar-actions">
+      <button class="icon-btn" id="btnTheme" title="切换米白 / 夜间模式 (D)" aria-label="切换主题">
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+        </svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+      <button class="icon-btn" id="btnPin" title="窗口置顶" aria-label="窗口置顶">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 17v5"></path>
+          <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"></path>
+        </svg>
+      </button>
+      <button class="icon-btn" id="btnFullscreen" title="沉浸全屏 (F11)" aria-label="沉浸全屏">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+        </svg>
+      </button>
+      <button class="icon-btn" id="btnSettings" title="专注与音效设置" aria-label="设置">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
+      <span class="titlebar-divider"></span>
+      <button class="icon-btn" id="btnTray" title="最小化到托盘（后台继续响铃）" aria-label="收入托盘">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 19h16"></path>
+        </svg>
+      </button>
+      <button class="icon-btn" id="btnMin" title="最小化" aria-label="最小化">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <line x1="6" y1="12" x2="18" y2="12"></line>
+        </svg>
+      </button>
+      <button class="icon-btn close-btn" id="btnClose" title="退出应用" aria-label="退出">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- 主舞台 -->
+  <main class="stage" id="stage">
+    <!-- 顶部微提示 -->
+    <div class="top-meta">
+      <span class="meta-chip" id="intervalBadge">随机微休息 · 3–5 分钟 / 闭眼 10 秒</span>
+      <span class="meta-chip subtle hidden" id="nextChimeHint">下次提示约 --:--</span>
+    </div>
+
+    <!-- 可点击切换效果的时钟容器 -->
+    <section class="clock-trigger" id="clockTrigger" role="button" tabindex="0" title="点击切换时钟样式：极简数字 / 3D 翻页时钟 / 呼吸光环">
+      <!-- 模式 1：极简排版数字 -->
+      <div class="clock-view view-minimal" id="viewMinimal">
+        <div class="minimal-digits" id="minimalDigits">90:00</div>
+        <div class="minimal-progress-track">
+          <div class="minimal-progress-fill" id="minimalProgress"></div>
+        </div>
+      </div>
+
+      <!-- 模式 2：3D 机械翻页时钟 -->
+      <div class="clock-view view-flip" id="viewFlip">
+        <div class="flip-group">
+          <div class="flip-unit" data-unit="m1">
+            <div class="flip-card">
+              <div class="card-face card-top"><span>9</span></div>
+              <div class="card-face card-bottom"><span>9</span></div>
+              <div class="card-face card-flip-top"><span>9</span></div>
+              <div class="card-face card-flip-bottom"><span>9</span></div>
+            </div>
+          </div>
+          <div class="flip-unit" data-unit="m2">
+            <div class="flip-card">
+              <div class="card-face card-top"><span>0</span></div>
+              <div class="card-face card-bottom"><span>0</span></div>
+              <div class="card-face card-flip-top"><span>0</span></div>
+              <div class="card-face card-flip-bottom"><span>0</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flip-colon" aria-hidden="true">
+          <span></span>
+          <span></span>
+        </div>
+
+        <div class="flip-group">
+          <div class="flip-unit" data-unit="s1">
+            <div class="flip-card">
+              <div class="card-face card-top"><span>0</span></div>
+              <div class="card-face card-bottom"><span>0</span></div>
+              <div class="card-face card-flip-top"><span>0</span></div>
+              <div class="card-face card-flip-bottom"><span>0</span></div>
+            </div>
+          </div>
+          <div class="flip-unit" data-unit="s2">
+            <div class="flip-card">
+              <div class="card-face card-top"><span>0</span></div>
+              <div class="card-face card-bottom"><span>0</span></div>
+              <div class="card-face card-flip-top"><span>0</span></div>
+              <div class="card-face card-flip-bottom"><span>0</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 模式 3：禅意呼吸光环 -->
+      <div class="clock-view view-halo" id="viewHalo">
+        <div class="halo-wrapper">
+          <svg class="halo-svg" viewBox="0 0 260 260">
+            <circle class="halo-track" cx="130" cy="130" r="112" />
+            <circle class="halo-arc" id="haloArc" cx="130" cy="130" r="112" />
+          </svg>
+          <div class="halo-center">
+            <div class="halo-digits" id="haloDigits">90:00</div>
+            <div class="halo-sub" id="haloSub">深度专注周期</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="clock-switch-hint" id="clockSwitchHint">点击倒计时切换样式 · 极简 / 翻页 / 光环</div>
+    </section>
+
+    <!-- 时钟模式圆点选择器 -->
+    <div class="mode-dots" role="tablist" aria-label="时钟显示风格">
+      <button class="mode-dot active" data-mode="minimal" role="tab" aria-selected="true">极简</button>
+      <button class="mode-dot" data-mode="flip" role="tab" aria-selected="false">翻页</button>
+      <button class="mode-dot" data-mode="halo" role="tab" aria-selected="false">光环</button>
+    </div>
+
+    <!-- 控制操作区 -->
+    <section class="controls">
+      <button class="btn-secondary" id="btnReset" title="重置计时 (R)">重置</button>
+      <button class="btn-primary" id="btnToggle" title="开始 / 暂停 (Space)">
+        <span id="btnToggleLabel">开始专注</span>
+      </button>
+      <button class="btn-secondary" id="btnTestRest" title="立即体验一次 10 秒闭眼微休息">试听微休息</button>
+    </section>
+
+    <!-- 底部轻统计 -->
+    <footer class="stats-bar">
+      <div class="stat-item">
+        <span class="stat-label">本次微休息</span>
+        <span class="stat-value" id="statSessionRests">0 次</span>
+      </div>
+      <span class="stat-sep">·</span>
+      <div class="stat-item">
+        <span class="stat-label">今日专注</span>
+        <span class="stat-value" id="statTodayMinutes">0 分钟</span>
+      </div>
+      <span class="stat-sep">·</span>
+      <div class="stat-item">
+        <span class="stat-label">今日重放</span>
+        <span class="stat-value" id="statTodayRests">0 次</span>
+      </div>
+    </footer>
+  </main>
+
+  <!-- 10 秒闭眼微休息柔和覆盖层 -->
+  <div class="rest-overlay" id="restOverlay" aria-hidden="true">
+    <div class="rest-inner">
+      <div class="rest-breath-ring">
+        <svg viewBox="0 0 220 220">
+          <circle class="rest-ring-bg" cx="110" cy="110" r="96" />
+          <circle class="rest-ring-fg" id="restRingFg" cx="110" cy="110" r="96" />
+        </svg>
+        <div class="rest-countdown" id="restCountdown">10</div>
+      </div>
+      <h2 class="rest-title">轻轻闭上眼睛</h2>
+      <p class="rest-desc">放空 10 秒，让大脑以 20 倍速重放刚刚学过的内容</p>
+      <button class="btn-ghost" id="btnSkipRest">跳过本次 (Space)</button>
+    </div>
+  </div>
+
+  <!-- 专注完成提示弹窗 -->
+  <div class="complete-overlay" id="completeOverlay" aria-hidden="true">
+    <div class="complete-card">
+      <div class="complete-badge">周期完成</div>
+      <h2 class="complete-title">完成了一次深度专注</h2>
+      <p class="complete-summary" id="completeSummary">
+        本次专注 90 分钟，穿插完成了 0 次大脑重放微休息。建议起身远眺或活动 10–20 分钟。
+      </p>
+      <button class="btn-primary" id="btnCompleteDone">好的，休息一下</button>
+    </div>
+  </div>
+
+  <!-- 侧滑设置抽屉 -->
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  <aside class="settings-drawer" id="settingsDrawer" aria-label="设置面板">
+    <div class="drawer-header">
+      <h3>专注与音效设置</h3>
+      <button class="icon-btn" id="btnCloseSettings" aria-label="关闭设置">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <div class="drawer-body">
+      <div class="setting-group">
+        <div class="setting-row">
+          <label for="inputFocusMinutes">总专注时长</label>
+          <span class="setting-val" id="valFocusMinutes">90 分钟</span>
+        </div>
+        <div class="preset-pills" id="focusPresets">
+          <button class="pill" data-min="45">45 分钟</button>
+          <button class="pill" data-min="60">60 分钟</button>
+          <button class="pill active" data-min="90">90 分钟</button>
+        </div>
+        <input type="range" id="inputFocusMinutes" min="5" max="120" step="5" value="90" />
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-row">
+          <label>随机提示音区间</label>
+          <span class="setting-val" id="valRandomRange">3 – 5 分钟</span>
+        </div>
+        <div class="range-pair">
+          <div class="range-sub">
+            <span>最短</span>
+            <input type="range" id="inputMinGap" min="1" max="12" step="1" value="3" />
+          </div>
+          <div class="range-sub">
+            <span>最长</span>
+            <input type="range" id="inputMaxGap" min="2" max="15" step="1" value="5" />
+          </div>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-row">
+          <label for="inputRestSeconds">闭眼微休息时长</label>
+          <span class="setting-val" id="valRestSeconds">10 秒</span>
+        </div>
+        <input type="range" id="inputRestSeconds" min="5" max="30" step="1" value="10" />
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-row">
+          <label for="selectChime">提示音色</label>
+          <button class="text-btn" id="btnPreviewChime">试听</button>
+        </div>
+        <select id="selectChime" class="styled-select">
+          <option value="bowl">藏式颂钵（空灵柔和 · 推荐）</option>
+          <option value="chime">木质风铃（清透泛音）</option>
+          <option value="piano">柔和钢琴（温暖和弦）</option>
+          <option value="wood">禅意木鱼（极简轻敲）</option>
+        </select>
+        <div class="setting-row compact">
+          <span>提示音量</span>
+          <span class="setting-val" id="valChimeVolume">75%</span>
+        </div>
+        <input type="range" id="inputChimeVolume" min="10" max="100" step="5" value="75" />
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-row">
+          <label for="selectAmbient">伴随环境音</label>
+          <span class="setting-val" id="valAmbientVolume">30%</span>
+        </div>
+        <select id="selectAmbient" class="styled-select">
+          <option value="none">关闭（纯粹静音）</option>
+          <option value="pink">柔和粉红雨声（轻白噪音）</option>
+          <option value="binaural40">40 Hz 专注轻脉冲</option>
+        </select>
+        <input type="range" id="inputAmbientVolume" min="5" max="80" step="5" value="30" />
+      </div>
+
+      <div class="setting-group toggle-row">
+        <div>
+          <div class="toggle-title">隐藏下次提醒倒计时</div>
+          <div class="toggle-sub">保留随机惊喜感，避免盯表分心</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="toggleHideNext" checked />
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+  </aside>
+
+  <script src="audio.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

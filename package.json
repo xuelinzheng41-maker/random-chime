@@ -1,0 +1,46 @@
+{
+  "name": "random-chime",
+  "productName": "随机提示音",
+  "version": "1.0.0",
+  "description": "基于神经科学间隙效应（Gap Effect）的极简随机微休息专注计时器",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win portable",
+    "build:dir": "electron-builder --win dir"
+  },
+  "build": {
+    "appId": "com.vibecoding.random-chime",
+    "productName": "随机提示音",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.png"
+    },
+    "portable": {
+      "artifactName": "随机提示音-${version}.exe"
+    },
+    "npmRebuild": false
+  },
+  "devDependencies": {
+    "electron": "^35.0.0",
+    "electron-builder": "^26.0.12"
+  },
+  "author": "Random Chime"
+}
