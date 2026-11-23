@@ -43,7 +43,7 @@
     </div>
 
     <div class="titlebar-actions">
-      <button class="icon-btn" id="btnTheme" title="切换米白 / 夜间模式 (D)" aria-label="切换主题">
+      <button class="icon-btn" id="btnTheme" title="单击切换深浅色 (D) · 右键选择主题" aria-label="切换主题">
         <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="4"></circle>
           <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
@@ -719,6 +719,24 @@
     <div class="drawer-body tab-panel active" id="panelSettings">
       <div class="setting-group">
         <div class="setting-row">
+          <label>外观主题</label>
+          <span class="setting-val" id="valThemeName">宣纸米白</span>
+        </div>
+        <div class="theme-sub-caption">浅色</div>
+        <div class="theme-grid" data-theme-grid="light"></div>
+        <div class="theme-sub-caption">深色</div>
+        <div class="theme-grid" data-theme-grid="dark"></div>
+        <div class="toggle-row" style="border-top:none;padding-top:2px">
+          <div>
+            <div class="toggle-title">跟随系统深浅色</div>
+            <div class="toggle-sub">自动在你选的浅色 / 深色主题间切换</div>
+          </div>
+          <label class="switch"><input type="checkbox" id="toggleFollowSystem" /><span class="slider"></span></label>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-row">
           <label for="inputFocusMinutes">默认专注时长</label>
           <span class="setting-val" id="valFocusMinutes">90 分钟</span>
         </div>
@@ -895,6 +913,14 @@
       </div>
     </div>
   </aside>
+
+  <div class="theme-popover hidden" id="themePopover">
+    <div class="section-caption">选择主题（标题栏太阳/月亮单击切换深浅色，右键打开此面板）</div>
+    <div class="theme-sub-caption">浅色</div>
+    <div class="theme-grid" data-theme-grid="light"></div>
+    <div class="theme-sub-caption">深色</div>
+    <div class="theme-grid" data-theme-grid="dark"></div>
+  </div>
 
   <script src="audio.js"></script>
   <script src="app.js"></script>

@@ -1,7 +1,7 @@
 {
   "name": "random-chime",
   "productName": "随机提示音",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Anew (日新) · 融合神经科学随机提示音专注舱与 AI 助手的全能待办效率工作台",
   "main": "main.js",
   "scripts": {

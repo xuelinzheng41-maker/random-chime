@@ -40,6 +40,9 @@
     boundTaskId: "",
     fullscreenScale: 1,
     sidebarCollapsed: false,
+    lightTheme: "cream",
+    darkTheme: "dark",
+    followSystem: false,
   };
 
   const defaultAiConfig = {
@@ -1527,14 +1530,60 @@
     sfRestCount.textContent = String(todayRests);
   }
 
-  function applyTheme(theme) {
-    settings.theme = theme;
-    htmlEl.setAttribute("data-theme", theme);
-    if (window.desktopAPI) {
-      window.desktopAPI.setThemeBg(theme === "dark");
-    }
+  const THEMES = [{"id":"snow","name":"纯净白","mode":"light","bg":"#ffffff","side":"#f7f8fa","text":"#1f2328","acc":"#2f6feb"},{"id":"cream","name":"宣纸米白","mode":"light","bg":"#f6f3ec","side":"#f0ece2","text":"#2d2a26","acc":"#c47b5a"},{"id":"mist","name":"雾霾蓝","mode":"light","bg":"#eef2f6","side":"#e6ecf2","text":"#1e2a36","acc":"#4a7bab"},{"id":"mint","name":"薄荷绿","mode":"light","bg":"#eef4f0","side":"#e5efe8","text":"#1f2d25","acc":"#3d8b63"},{"id":"sakura","name":"樱花粉","mode":"light","bg":"#f8f1f2","side":"#f3e8ea","text":"#33262a","acc":"#c9677f"},{"id":"dark","name":"暖灰夜间","mode":"dark","bg":"#141413","side":"#191816","text":"#ede9e0","acc":"#d48c6a"},{"id":"graphite","name":"石墨深灰","mode":"dark","bg":"#17181b","side":"#1b1c20","text":"#e6e8eb","acc":"#6b9cf5"},{"id":"midnight","name":"午夜深蓝","mode":"dark","bg":"#0f1623","side":"#121a28","text":"#e3e9f3","acc":"#7aa2f7"},{"id":"oled","name":"纯黑 OLED","mode":"dark","bg":"#000000","side":"#060606","text":"#ededed","acc":"#6f8cff"}];
+  const systemDark = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+  function findTheme(id) { return THEMES.find((t) => t.id === id) || THEMES[1]; }
+
+  function applyTheme(themeId) {
+    const t = findTheme(themeId);
+    settings.theme = t.id;
+    if (t.mode === "dark") settings.darkTheme = t.id; else settings.lightTheme = t.id;
+    htmlEl.setAttribute("data-theme", t.id);
+    htmlEl.setAttribute("data-mode", t.mode);
+    if (window.desktopAPI) window.desktopAPI.setThemeBg(t.bg);
     saveSettings();
+    renderThemePickers();
   }
+
+  function toggleThemeMode() {
+    settings.followSystem = false;
+    const cur = findTheme(settings.theme);
+    applyTheme(cur.mode === "dark" ? settings.lightTheme || "cream" : settings.darkTheme || "dark");
+  }
+
+  function applySystemTheme() {
+    if (!settings.followSystem || !systemDark) return;
+    applyTheme(systemDark.matches ? settings.darkTheme || "dark" : settings.lightTheme || "cream");
+  }
+  if (systemDark) systemDark.addEventListener("change", applySystemTheme);
+
+  function renderThemePickers() {
+    document.querySelectorAll("[data-theme-grid]").forEach((grid) => {
+      const mode = grid.getAttribute("data-theme-grid");
+      grid.innerHTML = THEMES.filter((t) => t.mode === mode).map((t) =>
+        '<button type="button" class="theme-swatch' + (t.id === settings.theme ? " active" : "") + '" data-theme-id="' + t.id + '">' +
+        '<div class="swatch-preview" style="background:' + t.bg + '">' +
+        '<div class="swatch-side" style="background:' + t.side + '"></div>' +
+        '<div class="swatch-main"><div class="swatch-line" style="background:' + t.text + ';width:70%;opacity:.75"></div>' +
+        '<div class="swatch-line" style="background:' + t.acc + ';width:45%"></div></div></div>' +
+        '<div class="swatch-name">' + t.name + "</div></button>").join("");
+    });
+    const nameEl = document.getElementById("valThemeName");
+    if (nameEl) nameEl.textContent = findTheme(settings.theme).name;
+    const fsT = document.getElementById("toggleFollowSystem");
+    if (fsT) fsT.checked = Boolean(settings.followSystem);
+  }
+
+  document.addEventListener("click", (e) => {
+    const sw = e.target.closest("[data-theme-id]");
+    const pop = document.getElementById("themePopover");
+    if (sw) {
+      settings.followSystem = false;
+      applyTheme(sw.getAttribute("data-theme-id"));
+      return;
+    }
+    if (pop && !pop.classList.contains("hidden") && !pop.contains(e.target)) pop.classList.add("hidden");
+  });
 
   function applyClockMode(mode, withFeedback = false) {
     if (!CLOCK_MODES.includes(mode)) mode = "minimal";
@@ -2381,7 +2430,7 @@
   btnCompleteAI.addEventListener("click", () => savePendingRecord(true));
 
   btnTheme.addEventListener("click", () => {
-    applyTheme(settings.theme === "cream" ? "dark" : "cream");
+    toggleThemeMode();
   });
 
   if (window.desktopAPI) {
@@ -2469,7 +2518,7 @@
   fsScaleLabel.addEventListener("click", () => { applyFullscreenScale(1); showFsDock(); });
   fsBtnMode.addEventListener("click", () => { cycleClockMode(); showFsDock(); });
   fsBtnTheme.addEventListener("click", () => {
-    applyTheme(settings.theme === "cream" ? "dark" : "cream");
+    toggleThemeMode();
     showFsDock();
   });
   fsBtnExit.addEventListener("click", () => {
@@ -2560,7 +2609,7 @@
     } else if (e.key === "v" || e.key === "V") {
       cycleClockMode();
     } else if (e.key === "d" || e.key === "D") {
-      applyTheme(settings.theme === "cream" ? "dark" : "cream");
+      toggleThemeMode();
     } else if ((e.ctrlKey || e.metaKey) && (e.key === "b" || e.key === "B")) {
       e.preventDefault();
       btnToggleSidebar.click();
@@ -2572,10 +2621,21 @@
     }
   });
 
+  btnTheme.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    document.getElementById("themePopover").classList.toggle("hidden");
+  });
+  document.getElementById("toggleFollowSystem").addEventListener("change", (e) => {
+    settings.followSystem = e.target.checked;
+    saveSettings();
+    applySystemTheme();
+  });
+
   // 初始化
   qcInputDate.value = todayKey();
   bodyEl.classList.toggle("sidebar-collapsed", Boolean(settings.sidebarCollapsed));
   applyTheme(settings.theme);
+  applySystemTheme();
   applyClockMode(settings.clockMode, false);
   applyFullscreenScale(settings.fullscreenScale || 1);
   populateListSelects();

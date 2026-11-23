@@ -146,7 +146,7 @@ ipcMain.handle("window:toggle-pin", () => {
 
 ipcMain.handle("window:set-theme-bg", (_event, isDark) => {
   if (mainWindow) {
-    mainWindow.setBackgroundColor(isDark ? "#141413" : "#F6F3EC");
+    mainWindow.setBackgroundColor(typeof isDark === "string" ? isDark : isDark ? "#141413" : "#F6F3EC");
   }
 });
 
