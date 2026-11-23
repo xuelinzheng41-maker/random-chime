@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld("desktopAPI", {
   setPreventSleep: (enabled) => ipcRenderer.invoke("power:set-prevent-sleep", enabled),
   updateTrayTooltip: (text) => ipcRenderer.invoke("tray:update-tooltip", text),
   aiChat: (payload) => ipcRenderer.invoke("ai:chat", payload),
+  aiModels: (payload) => ipcRenderer.invoke("ai:models", payload),
   onFullscreenChanged: (cb) => {
     ipcRenderer.on("window:fullscreen-changed", (_e, val) => cb(val));
   },

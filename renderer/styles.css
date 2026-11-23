@@ -1579,6 +1579,19 @@ body.is-fullscreen.ui-idle .top-section {
   gap: 6px;
 }
 
+.field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.endpoint-preview {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  word-break: break-all;
+  line-height: 1.4;
+}
+
 .ai-status-msg {
   font-size: 11.5px;
   min-height: 16px;

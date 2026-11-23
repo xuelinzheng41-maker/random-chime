@@ -13,9 +13,9 @@
   const REST_CIRCUMFERENCE = 2 * Math.PI * 96;
 
   const AI_PRESETS = {
+    custom: { baseUrl: "https://api.openai.com/v1", model: "gpt-4o-mini" },
     deepseek: { baseUrl: "https://api.deepseek.com/v1", model: "deepseek-chat" },
-    openai: { baseUrl: "https://api.openai.com/v1", model: "gpt-4o-mini" },
-    kimi: { baseUrl: "https://api.moonshot.cn/v1", model: "moonshot-v1-8k" },
+    siliconflow: { baseUrl: "https://api.siliconflow.cn/v1", model: "Qwen/Qwen2.5-7B-Instruct" },
     ollama: { baseUrl: "http://127.0.0.1:11434/v1", model: "qwen2.5:7b" },
   };
 
@@ -35,9 +35,9 @@
   };
 
   const defaultAiConfig = {
-    provider: "deepseek",
-    baseUrl: "https://api.deepseek.com/v1",
-    model: "deepseek-chat",
+    provider: "custom",
+    baseUrl: "https://api.openai.com/v1",
+    model: "gpt-4o-mini",
     apiKey: "",
     scope: "today",
   };
@@ -223,7 +223,10 @@
   // AI DOM
   const aiProviderBtns = Array.from(document.querySelectorAll("#aiProviderPresets .pill"));
   const inputAiBaseUrl = $("inputAiBaseUrl");
+  const aiEndpointPreview = $("aiEndpointPreview");
   const inputAiModel = $("inputAiModel");
+  const aiModelList = $("aiModelList");
+  const btnFetchModels = $("btnFetchModels");
   const inputAiKey = $("inputAiKey");
   const btnToggleKeyVis = $("btnToggleKeyVis");
   const btnTestAI = $("btnTestAI");
@@ -799,8 +802,17 @@
   // ============================================================
   // AI 进展分析面板
   // ============================================================
+  function computeEndpointPreview(url) {
+    const cleaned = String(url || "").trim().replace(/\/+$/, "");
+    if (!cleaned) return "";
+    if (cleaned.endsWith("/chat/completions")) return "实际请求：" + cleaned;
+    if (/\/v\d+$/i.test(cleaned)) return "实际请求：" + cleaned + "/chat/completions";
+    return "实际请求：" + cleaned + "/v1/chat/completions";
+  }
+
   function syncAiUI() {
     inputAiBaseUrl.value = aiConfig.baseUrl || "";
+    aiEndpointPreview.textContent = computeEndpointPreview(aiConfig.baseUrl);
     inputAiModel.value = aiConfig.model || "";
     inputAiKey.value = aiConfig.apiKey || "";
     aiProviderBtns.forEach((b) => {
@@ -1010,7 +1022,32 @@
 
   inputAiBaseUrl.addEventListener("input", (e) => {
     aiConfig.baseUrl = e.target.value.trim();
+    aiEndpointPreview.textContent = computeEndpointPreview(aiConfig.baseUrl);
     saveAiConfig();
+  });
+
+  btnFetchModels.addEventListener("click", async () => {
+    if (!window.desktopAPI || !window.desktopAPI.aiModels) return;
+    setAiStatus("正在拉取可用模型列表...", "");
+    btnFetchModels.disabled = true;
+    try {
+      const res = await window.desktopAPI.aiModels({
+        baseUrl: aiConfig.baseUrl,
+        apiKey: aiConfig.apiKey,
+      });
+      if (res.ok && res.models.length > 0) {
+        aiModelList.innerHTML = res.models
+          .map((id) => '<option value="' + escapeHtml(id) + '"></option>')
+          .join("");
+        setAiStatus("已拉取 " + res.models.length + " 个模型，点击模型输入框即可下拉选择。", "ok");
+      } else if (res.ok) {
+        setAiStatus("接口未返回模型列表，请直接手动输入模型名。", "");
+      } else {
+        setAiStatus(res.error || "拉取模型失败，请手动输入模型名。", "err");
+      }
+    } finally {
+      btnFetchModels.disabled = false;
+    }
   });
   inputAiModel.addEventListener("input", (e) => {
     aiConfig.model = e.target.value.trim();

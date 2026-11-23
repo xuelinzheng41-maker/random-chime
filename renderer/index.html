@@ -392,20 +392,25 @@
         </div>
 
         <div class="preset-pills four-cols" id="aiProviderPresets">
+          <button class="pill" data-provider="custom">OpenAI兼容</button>
           <button class="pill" data-provider="deepseek">DeepSeek</button>
-          <button class="pill" data-provider="openai">OpenAI</button>
-          <button class="pill" data-provider="kimi">Kimi</button>
+          <button class="pill" data-provider="siliconflow">硅基流动</button>
           <button class="pill" data-provider="ollama">Ollama</button>
         </div>
 
         <label class="field-label">
-          <span>API Base URL</span>
-          <input type="text" id="inputAiBaseUrl" class="field-input" placeholder="https://api.deepseek.com/v1" />
+          <span>API Base URL（支持 /v1、/v3、/v4 或完整 /chat/completions）</span>
+          <input type="text" id="inputAiBaseUrl" class="field-input" placeholder="https://your-endpoint.com/v1" />
+          <span class="endpoint-preview" id="aiEndpointPreview"></span>
         </label>
 
         <label class="field-label">
-          <span>模型名称 (Model)</span>
-          <input type="text" id="inputAiModel" class="field-input" placeholder="deepseek-chat" />
+          <span class="field-label-row">
+            <span>模型名称 (Model)</span>
+            <button class="text-btn" id="btnFetchModels" type="button">拉取模型列表</button>
+          </span>
+          <input type="text" id="inputAiModel" list="aiModelList" class="field-input" placeholder="输入或拉取模型 ID，如 gpt-4o-mini / deepseek-chat" />
+          <datalist id="aiModelList"></datalist>
         </label>
 
         <label class="field-label">

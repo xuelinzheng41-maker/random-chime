@@ -156,13 +156,56 @@ ipcMain.handle("tray:update-tooltip", (_event, text) => {
   }
 });
 
+function resolveApiBase(baseUrl) {
+  const cleaned = String(baseUrl || "").trim().replace(/\/+$/, "");
+  if (!cleaned) return "";
+  if (cleaned.endsWith("/chat/completions")) {
+    return cleaned.slice(0, -"/chat/completions".length);
+  }
+  if (/\/v\d+$/i.test(cleaned)) {
+    return cleaned;
+  }
+  return cleaned + "/v1";
+}
+
 function resolveChatEndpoint(baseUrl) {
   const cleaned = String(baseUrl || "").trim().replace(/\/+$/, "");
   if (!cleaned) return "";
   if (cleaned.endsWith("/chat/completions")) return cleaned;
-  if (cleaned.endsWith("/v1")) return cleaned + "/chat/completions";
-  return cleaned + "/v1/chat/completions";
+  return resolveApiBase(cleaned) + "/chat/completions";
 }
+
+ipcMain.handle("ai:models", async (_event, payload) => {
+  try {
+    const { baseUrl, apiKey } = payload || {};
+    const apiBase = resolveApiBase(baseUrl);
+    if (!apiBase) return { ok: false, error: "请先填写 API Base URL。" };
+    const headers = { Accept: "application/json" };
+    if (apiKey && String(apiKey).trim()) {
+      headers.Authorization = "Bearer " + String(apiKey).trim();
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15000);
+    let res;
+    try {
+      res = await fetch(apiBase + "/models", { method: "GET", headers, signal: controller.signal });
+    } finally {
+      clearTimeout(timer);
+    }
+    const text = await res.text();
+    let data = null;
+    try { data = JSON.parse(text); } catch {}
+    if (!res.ok) {
+      return { ok: false, error: "拉取模型失败 (" + res.status + ")" };
+    }
+    const list = Array.isArray(data && data.data)
+      ? data.data.map((m) => m && m.id).filter(Boolean).sort()
+      : [];
+    return { ok: true, models: list };
+  } catch (err) {
+    return { ok: false, error: "拉取失败: " + (err && err.message ? err.message : String(err)) };
+  }
+});
 
 ipcMain.handle("ai:chat", async (_event, payload) => {
   try {
